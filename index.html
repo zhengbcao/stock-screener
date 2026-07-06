@@ -377,6 +377,57 @@ td.amount {
 .curated-btn.active svg {
     fill: #fff;
 }
+/* 精选控制面板 */
+.curated-panel {
+    display: none;
+    background: #fffbe9;
+    border: 1px solid #f6c453;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #5a4a10;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.curated-panel.show {
+    display: flex;
+}
+.curated-panel .cp-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.curated-panel .cp-label {
+    white-space: nowrap;
+    font-weight: 600;
+    color: #7a5a0a;
+}
+.curated-panel .cp-input {
+    width: 80px;
+    padding: 5px 8px;
+    border: 1px solid #e0c060;
+    border-radius: 6px;
+    font-size: 13px;
+    text-align: center;
+    color: #333;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.curated-panel .cp-input:focus {
+    border-color: #c49a20;
+}
+.curated-panel .cp-unit {
+    color: #888;
+    font-size: 12px;
+}
+.curated-panel .cp-hint {
+    font-size: 12px;
+    color: #999;
+    margin-left: auto;
+}
 </style>
 </head>
 <body>
@@ -392,11 +443,11 @@ td.amount {
         <div class="meta">
             <div class="item">
                 <span class="label">数据最后刷新时间：</span>
-                <span class="value">2026-07-04 12:23</span>
+                <span class="value">2026-07-06 16:40</span>
             </div>
             <div class="item">
                 <span class="label">对应交易日：</span>
-                <span class="value">20260703</span>
+                <span class="value">20260706</span>
             </div>
         </div>
         <div class="refresh-status" id="refreshStatus" style="display:none;"></div>
@@ -405,7 +456,7 @@ td.amount {
     <div class="stats">
         <div class="stat-card">
             <div class="stat-label">入选股票数</div>
-            <div class="stat-value" id="stockCount">140</div>
+            <div class="stat-value" id="stockCount">128</div>
         </div>
         <div class="stat-card">
             <div class="stat-label">候选 T 日窗口</div>
@@ -441,6 +492,12 @@ td.amount {
             <strong style="color:#0f3460;">通用规则</strong><br>
             <strong>去重：</strong>同一股票多次命中只保留最新T日。&nbsp;&nbsp;
             <strong>排序：</strong>按大涨日T倒序；同日按成交额降序。
+            <br><br>
+            <strong style="color:#0f3460;">精选股票（前端筛选）</strong><br>
+            在以上规则选出的结果中，按成交额进一步精选：<br>
+            <strong>1.</strong> 未涨停个股：T日成交额 &ge; 用户设定下限（默认 15 亿）。<br>
+            <strong>2.</strong> 涨停个股：T日成交额 &ge; 用户设定下限（默认 0，即不限）。<br>
+            <strong>说明：</strong>点击「精选股票」按钮展开控制面板，可分别调整两类个股的成交额下限；设为 0 表示不限制。
         </div>
     </details>
 
@@ -449,12 +506,12 @@ td.amount {
             <label for="dateFilter">大涨日 T：</label>
             <select id="dateFilter" onchange="applyFilters()">
                 <option value="all">全部</option>
-                                <option value="2026-07-03">2026-07-03</option>
+                                <option value="2026-07-06">2026-07-06</option>
+                <option value="2026-07-03">2026-07-03</option>
                 <option value="2026-07-02">2026-07-02</option>
                 <option value="2026-07-01">2026-07-01</option>
                 <option value="2026-06-30">2026-06-30</option>
                 <option value="2026-06-29">2026-06-29</option>
-                <option value="2026-06-26">2026-06-26</option>
             </select>
         </div>
         <button id="curatedBtn" class="curated-btn" onclick="toggleCurated()">
@@ -470,6 +527,20 @@ td.amount {
             <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             一键复制到 Excel
         </button>
+    </div>
+
+    <div class="curated-panel" id="curatedPanel">
+        <div class="cp-group">
+            <span class="cp-label">未涨停成交额 &ge;</span>
+            <input type="number" class="cp-input" id="cpNonLimit" value="15" min="0" step="1" onchange="applyFilters()" oninput="applyFilters()">
+            <span class="cp-unit">亿</span>
+        </div>
+        <div class="cp-group">
+            <span class="cp-label">涨停成交额 &ge;</span>
+            <input type="number" class="cp-input" id="cpLimit" value="0" min="0" step="1" onchange="applyFilters()" oninput="applyFilters()">
+            <span class="cp-unit">亿</span>
+        </div>
+        <span class="cp-hint">精选模式：按成交额过滤（0 表示不限）</span>
     </div>
 
     <div class="table-wrap">
@@ -492,21 +563,595 @@ td.amount {
             </thead>
             <tbody>
                 
-        <tr class="even" data-code="300223" data-tdate="2026-07-03" data-limitup="0" data-amount="14426910673.0">
-            <td class="code">300223.SZ</td>
-            <td class="name">北京君正</td>
-            <td class="name">半导体</td>
-            <td class="concept">存储芯片+汽车芯片</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+10.61%</td>
-            <td class="amount">144.27亿</td>
-            <td class="price up">259.56</td>
-            <td class="price">247.11</td>
-            <td class="amount">1255.40亿</td>
-            <td class="amount">1094.55亿</td>
-            <td class="amount">967.66亿</td>
+        <tr class="even" data-code="000938" data-tdate="2026-07-06" data-limitup="1" data-amount="9933778019.89">
+            <td class="code">000938.SZ</td>
+            <td class="name">紫光股份</td>
+            <td class="name">IT设备</td>
+            <td class="concept">WiFi 6+算力租赁</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+10.01%</td>
+            <td class="amount">99.34亿</td>
+            <td class="price up">33.31</td>
+            <td class="price">31.79</td>
+            <td class="amount">952.69亿</td>
+            <td class="amount">952.69亿</td>
+            <td class="amount">638.29亿</td>
         </tr>
-        <tr class="odd" data-code="688017" data-tdate="2026-07-03" data-limitup="0" data-amount="12529366533.0">
+        <tr class="odd" data-code="688629" data-tdate="2026-07-06" data-limitup="0" data-amount="6678793074.0">
+            <td class="code">688629.SH</td>
+            <td class="name">华丰科技</td>
+            <td class="name">元器件</td>
+            <td class="concept">共封装光学(CPO)+铜缆高速连接</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+11.81%</td>
+            <td class="amount">66.79亿</td>
+            <td class="price up">201.26</td>
+            <td class="price">190.63</td>
+            <td class="amount">942.41亿</td>
+            <td class="amount">927.79亿</td>
+            <td class="amount">518.43亿</td>
+        </tr>
+        <tr class="even" data-code="600172" data-tdate="2026-07-06" data-limitup="1" data-amount="5247582045.0">
+            <td class="code">600172.SH</td>
+            <td class="name">黄河旋风</td>
+            <td class="name">矿物制品</td>
+            <td class="concept">培育钻石+第三代半导体</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+10.02%</td>
+            <td class="amount">52.48亿</td>
+            <td class="price up">18.55</td>
+            <td class="price">17.71</td>
+            <td class="amount">267.53亿</td>
+            <td class="amount">236.75亿</td>
+            <td class="amount">174.48亿</td>
+        </tr>
+        <tr class="odd" data-code="301165" data-tdate="2026-07-06" data-limitup="0" data-amount="4678950162.9">
+            <td class="code">301165.SZ</td>
+            <td class="name">锐捷网络</td>
+            <td class="name">通信设备</td>
+            <td class="concept">WiFi 6+共封装光学(CPO)</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+7.49%</td>
+            <td class="amount">46.79亿</td>
+            <td class="price up">102.00</td>
+            <td class="price">98.45</td>
+            <td class="amount">1135.91亿</td>
+            <td class="amount">1135.91亿</td>
+            <td class="amount">136.31亿</td>
+        </tr>
+        <tr class="even" data-code="300671" data-tdate="2026-07-06" data-limitup="0" data-amount="3445745010.16">
+            <td class="code">300671.SZ</td>
+            <td class="name">富满微</td>
+            <td class="name">半导体</td>
+            <td class="concept">汽车芯片+存储芯片</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+8.45%</td>
+            <td class="amount">34.46亿</td>
+            <td class="price up">102.32</td>
+            <td class="price">98.33</td>
+            <td class="amount">226.52亿</td>
+            <td class="amount">225.86亿</td>
+            <td class="amount">155.36亿</td>
+        </tr>
+        <tr class="odd" data-code="300684" data-tdate="2026-07-06" data-limitup="1" data-amount="3357374945.65">
+            <td class="code">300684.SZ</td>
+            <td class="name">中石科技</td>
+            <td class="name">元器件</td>
+            <td class="concept">AI PC+富士康概念</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+20.00%</td>
+            <td class="amount">33.57亿</td>
+            <td class="price up">74.41</td>
+            <td class="price">68.21</td>
+            <td class="amount">222.86亿</td>
+            <td class="amount">152.02亿</td>
+            <td class="amount">128.68亿</td>
+        </tr>
+        <tr class="even" data-code="688141" data-tdate="2026-07-06" data-limitup="0" data-amount="3059249418.0">
+            <td class="code">688141.SH</td>
+            <td class="name">杰华特</td>
+            <td class="name">半导体</td>
+            <td class="concept">汽车芯片+芯片概念</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+7.86%</td>
+            <td class="amount">30.59亿</td>
+            <td class="price up">168.26</td>
+            <td class="price">162.13</td>
+            <td class="amount">757.71亿</td>
+            <td class="amount">757.71亿</td>
+            <td class="amount">449.91亿</td>
+        </tr>
+        <tr class="odd" data-code="002025" data-tdate="2026-07-06" data-limitup="1" data-amount="2522432148.49">
+            <td class="code">002025.SZ</td>
+            <td class="name">航天电器</td>
+            <td class="name">元器件</td>
+            <td class="concept">共封装光学(CPO)+铜缆高速连接</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+10.00%</td>
+            <td class="amount">25.22亿</td>
+            <td class="price up">92.07</td>
+            <td class="price">87.88</td>
+            <td class="amount">418.02亿</td>
+            <td class="amount">417.88亿</td>
+            <td class="amount">246.01亿</td>
+        </tr>
+        <tr class="even" data-code="603268" data-tdate="2026-07-06" data-limitup="1" data-amount="2267666872.0">
+            <td class="code">603268.SH</td>
+            <td class="name">松发股份</td>
+            <td class="name">船舶</td>
+            <td class="concept">高端装备+在线教育</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+10.00%</td>
+            <td class="amount">22.68亿</td>
+            <td class="price up">163.35</td>
+            <td class="price">155.92</td>
+            <td class="amount">1585.77亿</td>
+            <td class="amount">381.01亿</td>
+            <td class="amount">319.87亿</td>
+        </tr>
+        <tr class="odd" data-code="301379" data-tdate="2026-07-06" data-limitup="0" data-amount="2248147564.26">
+            <td class="code">301379.SZ</td>
+            <td class="name">天山电子</td>
+            <td class="name">元器件</td>
+            <td class="concept">存储芯片+MiniLED</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+10.73%</td>
+            <td class="amount">22.48亿</td>
+            <td class="price up">35.61</td>
+            <td class="price">33.88</td>
+            <td class="amount">98.46亿</td>
+            <td class="amount">77.52亿</td>
+            <td class="amount">68.41亿</td>
+        </tr>
+        <tr class="even" data-code="603823" data-tdate="2026-07-06" data-limitup="0" data-amount="1830585103.0">
+            <td class="code">603823.SH</td>
+            <td class="name">百合花</td>
+            <td class="name">染料涂料</td>
+            <td class="concept">光刻胶+PEEK材料</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+9.99%</td>
+            <td class="amount">18.31亿</td>
+            <td class="price up">65.86</td>
+            <td class="price">62.87</td>
+            <td class="amount">274.22亿</td>
+            <td class="amount">274.22亿</td>
+            <td class="amount">87.24亿</td>
+        </tr>
+        <tr class="odd" data-code="301191" data-tdate="2026-07-06" data-limitup="1" data-amount="1699984946.68">
+            <td class="code">301191.SZ</td>
+            <td class="name">菲菱科思</td>
+            <td class="name">通信设备</td>
+            <td class="concept">F5G概念+WiFi 6</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+20.00%</td>
+            <td class="amount">17.00亿</td>
+            <td class="price up">135.01</td>
+            <td class="price">123.76</td>
+            <td class="amount">130.82亿</td>
+            <td class="amount">98.64亿</td>
+            <td class="amount">62.41亿</td>
+        </tr>
+        <tr class="even" data-code="300145" data-tdate="2026-07-06" data-limitup="0" data-amount="1652972844.88">
+            <td class="code">300145.SZ</td>
+            <td class="name">南方泵业</td>
+            <td class="name">机械基件</td>
+            <td class="concept">中芯国际概念+空气能热泵</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+8.65%</td>
+            <td class="amount">16.53亿</td>
+            <td class="price up">6.03</td>
+            <td class="price">5.79</td>
+            <td class="amount">115.79亿</td>
+            <td class="amount">115.22亿</td>
+            <td class="amount">78.62亿</td>
+        </tr>
+        <tr class="odd" data-code="000301" data-tdate="2026-07-06" data-limitup="1" data-amount="1586288016.76">
+            <td class="code">000301.SZ</td>
+            <td class="name">东方盛虹</td>
+            <td class="name">化纤</td>
+            <td class="concept">环氧丙烷+POE胶膜</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+10.04%</td>
+            <td class="amount">15.86亿</td>
+            <td class="price up">13.81</td>
+            <td class="price">13.18</td>
+            <td class="amount">913.01亿</td>
+            <td class="amount">912.62亿</td>
+            <td class="amount">282.49亿</td>
+        </tr>
+        <tr class="even" data-code="603087" data-tdate="2026-07-06" data-limitup="1" data-amount="1561694395.0">
+            <td class="code">603087.SH</td>
+            <td class="name">甘李药业</td>
+            <td class="name">生物制药</td>
+            <td class="concept">创新药+减肥药</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+10.00%</td>
+            <td class="amount">15.62亿</td>
+            <td class="price up">67.09</td>
+            <td class="price">64.04</td>
+            <td class="amount">400.73亿</td>
+            <td class="amount">376.48亿</td>
+            <td class="amount">232.09亿</td>
+        </tr>
+        <tr class="odd" data-code="688689" data-tdate="2026-07-06" data-limitup="0" data-amount="1238065315.0">
+            <td class="code">688689.SH</td>
+            <td class="name">银河微电</td>
+            <td class="name">半导体</td>
+            <td class="concept">先进封装+第三代半导体</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+18.70%</td>
+            <td class="amount">12.38亿</td>
+            <td class="price up">80.75</td>
+            <td class="price">74.39</td>
+            <td class="amount">106.33亿</td>
+            <td class="amount">106.33亿</td>
+            <td class="amount">38.66亿</td>
+        </tr>
+        <tr class="even" data-code="603757" data-tdate="2026-07-06" data-limitup="1" data-amount="1222250280.0">
+            <td class="code">603757.SH</td>
+            <td class="name">大元泵业</td>
+            <td class="name">机械基件</td>
+            <td class="concept">液冷服务器+数据中心(AIDC)</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+10.00%</td>
+            <td class="amount">12.22亿</td>
+            <td class="price up">79.19</td>
+            <td class="price">75.59</td>
+            <td class="amount">147.73亿</td>
+            <td class="amount">147.73亿</td>
+            <td class="amount">66.40亿</td>
+        </tr>
+        <tr class="odd" data-code="002396" data-tdate="2026-07-06" data-limitup="1" data-amount="1155247427.22">
+            <td class="code">002396.SZ</td>
+            <td class="name">星网锐捷</td>
+            <td class="name">通信设备</td>
+            <td class="concept">WiFi 6+F5G概念</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+10.00%</td>
+            <td class="amount">11.55亿</td>
+            <td class="price up">25.74</td>
+            <td class="price">24.57</td>
+            <td class="amount">195.77亿</td>
+            <td class="amount">194.96亿</td>
+            <td class="amount">143.24亿</td>
+        </tr>
+        <tr class="even" data-code="688206" data-tdate="2026-07-06" data-limitup="1" data-amount="1151606395.0">
+            <td class="code">688206.SH</td>
+            <td class="name">概伦电子</td>
+            <td class="name">半导体</td>
+            <td class="concept">存储芯片+芯片概念</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+20.01%</td>
+            <td class="amount">11.52亿</td>
+            <td class="price up">48.76</td>
+            <td class="price">44.69</td>
+            <td class="amount">212.88亿</td>
+            <td class="amount">212.88亿</td>
+            <td class="amount">136.77亿</td>
+        </tr>
+        <tr class="odd" data-code="301345" data-tdate="2026-07-06" data-limitup="0" data-amount="1108042937.92">
+            <td class="code">301345.SZ</td>
+            <td class="name">涛涛车业</td>
+            <td class="name">摩托车</td>
+            <td class="concept">两轮车+跨境电商</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+11.69%</td>
+            <td class="amount">11.08亿</td>
+            <td class="price up">258.02</td>
+            <td class="price">244.52</td>
+            <td class="amount">281.37亿</td>
+            <td class="amount">90.38亿</td>
+            <td class="amount">74.97亿</td>
+        </tr>
+        <tr class="even" data-code="603032" data-tdate="2026-07-06" data-limitup="0" data-amount="1079720027.0">
+            <td class="code">603032.SH</td>
+            <td class="name">德新科技</td>
+            <td class="name">专用机械</td>
+            <td class="concept">固态电池+锂电池概念</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+7.79%</td>
+            <td class="amount">10.80亿</td>
+            <td class="price up">29.75</td>
+            <td class="price">28.67</td>
+            <td class="amount">69.39亿</td>
+            <td class="amount">69.28亿</td>
+            <td class="amount">35.34亿</td>
+        </tr>
+        <tr class="odd" data-code="603928" data-tdate="2026-07-06" data-limitup="0" data-amount="979165865.0">
+            <td class="code">603928.SH</td>
+            <td class="name">兴业股份</td>
+            <td class="name">化工原料</td>
+            <td class="concept">丙烯酸+锂电池概念</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+7.82%</td>
+            <td class="amount">9.79亿</td>
+            <td class="price up">15.85</td>
+            <td class="price">15.28</td>
+            <td class="amount">54.00亿</td>
+            <td class="amount">54.00亿</td>
+            <td class="amount">18.38亿</td>
+        </tr>
+        <tr class="even" data-code="001287" data-tdate="2026-07-06" data-limitup="1" data-amount="956947480.07">
+            <td class="code">001287.SZ</td>
+            <td class="name">中电港</td>
+            <td class="name">元器件</td>
+            <td class="concept">存储芯片+国家大基金持股</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+10.00%</td>
+            <td class="amount">9.57亿</td>
+            <td class="price up">31.47</td>
+            <td class="price">30.04</td>
+            <td class="amount">239.14亿</td>
+            <td class="amount">239.14亿</td>
+            <td class="amount">106.97亿</td>
+        </tr>
+        <tr class="odd" data-code="301201" data-tdate="2026-07-06" data-limitup="0" data-amount="894043721.76">
+            <td class="code">301201.SZ</td>
+            <td class="name">诚达药业</td>
+            <td class="name">生物制药</td>
+            <td class="concept">细胞免疫治疗+CRO概念</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+12.83%</td>
+            <td class="amount">8.94亿</td>
+            <td class="price up">42.65</td>
+            <td class="price">40.23</td>
+            <td class="amount">65.99亿</td>
+            <td class="amount">46.29亿</td>
+            <td class="amount">37.19亿</td>
+        </tr>
+        <tr class="even" data-code="300943" data-tdate="2026-07-06" data-limitup="0" data-amount="846151258.6">
+            <td class="code">300943.SZ</td>
+            <td class="name">春晖智控</td>
+            <td class="name">机械基件</td>
+            <td class="concept">芯片概念+传感器</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+8.90%</td>
+            <td class="amount">8.46亿</td>
+            <td class="price up">50.42</td>
+            <td class="price">48.36</td>
+            <td class="amount">102.77亿</td>
+            <td class="amount">67.27亿</td>
+            <td class="amount">56.04亿</td>
+        </tr>
+        <tr class="odd" data-code="688103" data-tdate="2026-07-06" data-limitup="0" data-amount="751003840.0">
+            <td class="code">688103.SH</td>
+            <td class="name">国力电子</td>
+            <td class="name">元器件</td>
+            <td class="concept">芯片概念+高压快充</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+16.78%</td>
+            <td class="amount">7.51亿</td>
+            <td class="price up">85.26</td>
+            <td class="price">79.13</td>
+            <td class="amount">81.27亿</td>
+            <td class="amount">81.27亿</td>
+            <td class="amount">52.66亿</td>
+        </tr>
+        <tr class="even" data-code="002860" data-tdate="2026-07-06" data-limitup="1" data-amount="724188631.05">
+            <td class="code">002860.SZ</td>
+            <td class="name">星帅尔</td>
+            <td class="name">家用电器</td>
+            <td class="concept">HJT电池+TOPCON电池</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+10.03%</td>
+            <td class="amount">7.24亿</td>
+            <td class="price up">17.56</td>
+            <td class="price">16.76</td>
+            <td class="amount">61.84亿</td>
+            <td class="amount">60.40亿</td>
+            <td class="amount">37.67亿</td>
+        </tr>
+        <tr class="odd" data-code="603269" data-tdate="2026-07-06" data-limitup="1" data-amount="722698383.0">
+            <td class="code">603269.SH</td>
+            <td class="name">海鸥股份</td>
+            <td class="name">机械基件</td>
+            <td class="concept">液冷服务器+数据中心(AIDC)</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+9.97%</td>
+            <td class="amount">7.23亿</td>
+            <td class="price up">17.53</td>
+            <td class="price">16.74</td>
+            <td class="amount">75.72亿</td>
+            <td class="amount">75.72亿</td>
+            <td class="amount">56.29亿</td>
+        </tr>
+        <tr class="even" data-code="002457" data-tdate="2026-07-06" data-limitup="1" data-amount="721692120.2">
+            <td class="code">002457.SZ</td>
+            <td class="name">青龙管业</td>
+            <td class="name">塑料</td>
+            <td class="concept">地下管网+新型城镇化</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+10.01%</td>
+            <td class="amount">7.22亿</td>
+            <td class="price up">14.07</td>
+            <td class="price">13.43</td>
+            <td class="amount">46.92亿</td>
+            <td class="amount">46.89亿</td>
+            <td class="amount">34.44亿</td>
+        </tr>
+        <tr class="odd" data-code="603903" data-tdate="2026-07-06" data-limitup="1" data-amount="620088454.0">
+            <td class="code">603903.SH</td>
+            <td class="name">中持股份</td>
+            <td class="name">环境保护</td>
+            <td class="concept">污水处理+氢能源</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+10.04%</td>
+            <td class="amount">6.20亿</td>
+            <td class="price up">15.57</td>
+            <td class="price">14.86</td>
+            <td class="amount">39.75亿</td>
+            <td class="amount">39.75亿</td>
+            <td class="amount">22.24亿</td>
+        </tr>
+        <tr class="even" data-code="603211" data-tdate="2026-07-06" data-limitup="1" data-amount="539492520.0">
+            <td class="code">603211.SH</td>
+            <td class="name">晋拓股份</td>
+            <td class="name">汽车配件</td>
+            <td class="concept">毫米波雷达+专精特新</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+9.99%</td>
+            <td class="amount">5.39亿</td>
+            <td class="price up">39.53</td>
+            <td class="price">37.73</td>
+            <td class="amount">107.45亿</td>
+            <td class="amount">107.45亿</td>
+            <td class="amount">30.02亿</td>
+        </tr>
+        <tr class="odd" data-code="688071" data-tdate="2026-07-06" data-limitup="0" data-amount="538317715.0">
+            <td class="code">688071.SH</td>
+            <td class="name">华依科技</td>
+            <td class="name">专用机械</td>
+            <td class="concept">人形机器人+华为汽车</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+11.27%</td>
+            <td class="amount">5.38亿</td>
+            <td class="price up">40.29</td>
+            <td class="price">38.25</td>
+            <td class="amount">34.16亿</td>
+            <td class="amount">34.16亿</td>
+            <td class="amount">23.21亿</td>
+        </tr>
+        <tr class="even" data-code="688799" data-tdate="2026-07-06" data-limitup="0" data-amount="536540845.0">
+            <td class="code">688799.SH</td>
+            <td class="name">华纳药厂</td>
+            <td class="name">化学制药</td>
+            <td class="concept">创新药+仿制药一致性评价</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+8.67%</td>
+            <td class="amount">5.37亿</td>
+            <td class="price up">57.28</td>
+            <td class="price">55.00</td>
+            <td class="amount">76.55亿</td>
+            <td class="amount">76.55亿</td>
+            <td class="amount">36.04亿</td>
+        </tr>
+        <tr class="odd" data-code="688231" data-tdate="2026-07-06" data-limitup="0" data-amount="532029110.0">
+            <td class="code">688231.SH</td>
+            <td class="name">隆达股份</td>
+            <td class="name">航空</td>
+            <td class="concept">3D打印+航空发动机</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+7.62%</td>
+            <td class="amount">5.32亿</td>
+            <td class="price up">43.80</td>
+            <td class="price">42.25</td>
+            <td class="amount">139.98亿</td>
+            <td class="amount">139.98亿</td>
+            <td class="amount">64.10亿</td>
+        </tr>
+        <tr class="even" data-code="301161" data-tdate="2026-07-06" data-limitup="0" data-amount="524323153.81">
+            <td class="code">301161.SZ</td>
+            <td class="name">唯万密封</td>
+            <td class="name">工程机械</td>
+            <td class="concept">芯片概念+农机</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+7.09%</td>
+            <td class="amount">5.24亿</td>
+            <td class="price up">40.35</td>
+            <td class="price">39.01</td>
+            <td class="amount">48.42亿</td>
+            <td class="amount">31.15亿</td>
+            <td class="amount">25.39亿</td>
+        </tr>
+        <tr class="odd" data-code="605060" data-tdate="2026-07-06" data-limitup="1" data-amount="472517231.0">
+            <td class="code">605060.SH</td>
+            <td class="name">联德股</td>
+            <td class="name">机械基件</td>
+            <td class="concept">液冷服务器+数据中心(AIDC)</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+10.00%</td>
+            <td class="amount">4.73亿</td>
+            <td class="price up">57.52</td>
+            <td class="price">54.91</td>
+            <td class="amount">138.39亿</td>
+            <td class="amount">137.44亿</td>
+            <td class="amount">52.00亿</td>
+        </tr>
+        <tr class="even" data-code="600470" data-tdate="2026-07-06" data-limitup="1" data-amount="416813635.0">
+            <td class="code">600470.SH</td>
+            <td class="name">六国化工</td>
+            <td class="name">农药化肥</td>
+            <td class="concept">化肥+磷化工</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+10.03%</td>
+            <td class="amount">4.17亿</td>
+            <td class="price up">6.69</td>
+            <td class="price">6.39</td>
+            <td class="amount">34.90亿</td>
+            <td class="amount">34.90亿</td>
+            <td class="amount">26.00亿</td>
+        </tr>
+        <tr class="odd" data-code="920699" data-tdate="2026-07-06" data-limitup="1" data-amount="258832831.2">
+            <td class="code">920699.SZ</td>
+            <td class="name">海达尔</td>
+            <td class="name">家用电器</td>
+            <td class="concept">比亚迪概念+东数西算(算力)</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+15.26%</td>
+            <td class="amount">2.59亿</td>
+            <td class="price up">125.65</td>
+            <td class="price">117.33</td>
+            <td class="amount">57.33亿</td>
+            <td class="amount">26.23亿</td>
+            <td class="amount">15.86亿</td>
+        </tr>
+        <tr class="even" data-code="605377" data-tdate="2026-07-06" data-limitup="1" data-amount="176082210.0">
+            <td class="code">605377.SH</td>
+            <td class="name">华旺科技</td>
+            <td class="name">造纸</td>
+            <td class="concept">高股息精选+精装修</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+9.98%</td>
+            <td class="amount">1.76亿</td>
+            <td class="price up">9.70</td>
+            <td class="price">9.26</td>
+            <td class="amount">54.00亿</td>
+            <td class="amount">54.00亿</td>
+            <td class="amount">28.40亿</td>
+        </tr>
+        <tr class="odd" data-code="002774" data-tdate="2026-07-06" data-limitup="1" data-amount="81937378.4">
+            <td class="code">002774.SZ</td>
+            <td class="name">快意电梯</td>
+            <td class="name">运输设备</td>
+            <td class="concept">中俄贸易概念+一带一路</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+10.01%</td>
+            <td class="amount">8193.74万</td>
+            <td class="price up">15.83</td>
+            <td class="price">15.11</td>
+            <td class="amount">53.30亿</td>
+            <td class="amount">44.60亿</td>
+            <td class="amount">17.95亿</td>
+        </tr>
+        <tr class="even" data-code="603722" data-tdate="2026-07-06" data-limitup="1" data-amount="25902954.0">
+            <td class="code">603722.SH</td>
+            <td class="name">阿科力</td>
+            <td class="name">化工原料</td>
+            <td class="concept">丙烯酸+专精特新</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+10.00%</td>
+            <td class="amount">2590.30万</td>
+            <td class="price up">43.56</td>
+            <td class="price">41.58</td>
+            <td class="amount">42.57亿</td>
+            <td class="amount">41.69亿</td>
+            <td class="amount">24.24亿</td>
+        </tr>
+        <tr class="odd" data-code="603137" data-tdate="2026-07-06" data-limitup="1" data-amount="13721272.0">
+            <td class="code">603137.SH</td>
+            <td class="name">恒尚节能</td>
+            <td class="name">装修装饰</td>
+            <td class="concept">装配式建筑+建筑节能</td>
+            <td class="date">2026-07-06</td>
+            <td class="pct up">+9.99%</td>
+            <td class="amount">1372.13万</td>
+            <td class="price up">18.94</td>
+            <td class="price">18.08</td>
+            <td class="amount">34.65亿</td>
+            <td class="amount">34.65亿</td>
+            <td class="amount">15.77亿</td>
+        </tr>
+        <tr class="even" data-code="688017" data-tdate="2026-07-03" data-limitup="0" data-amount="12529366533.0">
             <td class="code">688017.SH</td>
             <td class="name">绿的谐波</td>
             <td class="name">机械基件</td>
@@ -514,13 +1159,13 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+18.15%</td>
             <td class="amount">125.29亿</td>
-            <td class="price up">488.00</td>
+            <td class="price up">453.98</td>
             <td class="price">450.52</td>
-            <td class="amount">894.65亿</td>
-            <td class="amount">894.65亿</td>
-            <td class="amount">585.16亿</td>
+            <td class="amount">832.28亿</td>
+            <td class="amount">832.28亿</td>
+            <td class="amount">544.37亿</td>
         </tr>
-        <tr class="even" data-code="300503" data-tdate="2026-07-03" data-limitup="0" data-amount="5526304515.31">
+        <tr class="odd" data-code="300503" data-tdate="2026-07-03" data-limitup="0" data-amount="5526304515.31">
             <td class="code">300503.SZ</td>
             <td class="name">昊志机电</td>
             <td class="name">机械基件</td>
@@ -528,13 +1173,13 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+16.99%</td>
             <td class="amount">55.26亿</td>
-            <td class="price up">111.00</td>
+            <td class="price up">109.80</td>
             <td class="price">102.94</td>
-            <td class="amount">342.13亿</td>
-            <td class="amount">267.48亿</td>
-            <td class="amount">199.91亿</td>
+            <td class="amount">338.43亿</td>
+            <td class="amount">264.59亿</td>
+            <td class="amount">197.74亿</td>
         </tr>
-        <tr class="odd" data-code="002747" data-tdate="2026-07-03" data-limitup="1" data-amount="5508068594.23">
+        <tr class="even" data-code="002747" data-tdate="2026-07-03" data-limitup="1" data-amount="5508068594.23">
             <td class="code">002747.SZ</td>
             <td class="name">埃斯顿</td>
             <td class="name">机械基件</td>
@@ -542,53 +1187,11 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+10.00%</td>
             <td class="amount">55.08亿</td>
-            <td class="price up">44.77</td>
+            <td class="price up">46.03</td>
             <td class="price">42.73</td>
-            <td class="amount">433.28亿</td>
-            <td class="amount">350.28亿</td>
-            <td class="amount">223.74亿</td>
-        </tr>
-        <tr class="even" data-code="301165" data-tdate="2026-07-03" data-limitup="0" data-amount="4703202412.02">
-            <td class="code">301165.SZ</td>
-            <td class="name">锐捷网络</td>
-            <td class="name">通信设备</td>
-            <td class="concept">WiFi 6+共封装光学(CPO)</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+11.31%</td>
-            <td class="amount">47.03亿</td>
-            <td class="price up">94.89</td>
-            <td class="price">90.07</td>
-            <td class="amount">1056.73亿</td>
-            <td class="amount">1056.73亿</td>
-            <td class="amount">126.81亿</td>
-        </tr>
-        <tr class="odd" data-code="300607" data-tdate="2026-07-03" data-limitup="0" data-amount="4594583901.94">
-            <td class="code">300607.SZ</td>
-            <td class="name">拓斯达</td>
-            <td class="name">专用机械</td>
-            <td class="concept">人形机器人+工业母机</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+13.55%</td>
-            <td class="amount">45.95亿</td>
-            <td class="price up">52.96</td>
-            <td class="price">49.80</td>
-            <td class="amount">252.60亿</td>
-            <td class="amount">178.74亿</td>
-            <td class="amount">159.59亿</td>
-        </tr>
-        <tr class="even" data-code="002056" data-tdate="2026-07-03" data-limitup="0" data-amount="4065511535.29">
-            <td class="code">002056.SZ</td>
-            <td class="name">横店东磁</td>
-            <td class="name">电气设备</td>
-            <td class="concept">BC电池+无线充电</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+7.04%</td>
-            <td class="amount">40.66亿</td>
-            <td class="price up">32.82</td>
-            <td class="price">31.74</td>
-            <td class="amount">533.89亿</td>
-            <td class="amount">533.34亿</td>
-            <td class="amount">266.39亿</td>
+            <td class="amount">445.48亿</td>
+            <td class="amount">360.14亿</td>
+            <td class="amount">230.04亿</td>
         </tr>
         <tr class="odd" data-code="002472" data-tdate="2026-07-03" data-limitup="1" data-amount="3412149027.29">
             <td class="code">002472.SZ</td>
@@ -598,39 +1201,11 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+9.99%</td>
             <td class="amount">34.12亿</td>
-            <td class="price up">47.01</td>
-            <td class="price">44.88</td>
-            <td class="amount">399.58亿</td>
-            <td class="amount">351.91亿</td>
-            <td class="amount">300.97亿</td>
-        </tr>
-        <tr class="even" data-code="688141" data-tdate="2026-07-03" data-limitup="0" data-amount="2978888538.0">
-            <td class="code">688141.SH</td>
-            <td class="name">杰华特</td>
-            <td class="name">半导体</td>
-            <td class="concept">汽车芯片+芯片概念</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+8.18%</td>
-            <td class="amount">29.79亿</td>
-            <td class="price up">156.00</td>
-            <td class="price">150.10</td>
-            <td class="amount">702.50亿</td>
-            <td class="amount">702.50亿</td>
-            <td class="amount">417.13亿</td>
-        </tr>
-        <tr class="odd" data-code="603662" data-tdate="2026-07-03" data-limitup="0" data-amount="2798273967.0">
-            <td class="code">603662.SH</td>
-            <td class="name">柯力传感</td>
-            <td class="name">电器仪表</td>
-            <td class="concept">人形机器人+机器视觉</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+8.37%</td>
-            <td class="amount">27.98亿</td>
-            <td class="price up">80.00</td>
-            <td class="price">76.91</td>
-            <td class="amount">224.66亿</td>
-            <td class="amount">224.66亿</td>
-            <td class="amount">105.44亿</td>
+            <td class="price up">46.75</td>
+            <td class="price">44.61</td>
+            <td class="amount">397.37亿</td>
+            <td class="amount">349.97亿</td>
+            <td class="amount">299.30亿</td>
         </tr>
         <tr class="even" data-code="002536" data-tdate="2026-07-03" data-limitup="1" data-amount="2577109516.27">
             <td class="code">002536.SZ</td>
@@ -640,53 +1215,25 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+9.99%</td>
             <td class="amount">25.77亿</td>
-            <td class="price up">51.96</td>
+            <td class="price up">55.00</td>
             <td class="price">49.60</td>
-            <td class="amount">298.66亿</td>
-            <td class="amount">282.87亿</td>
-            <td class="amount">184.78亿</td>
+            <td class="amount">316.13亿</td>
+            <td class="amount">299.42亿</td>
+            <td class="amount">195.60亿</td>
         </tr>
-        <tr class="odd" data-code="688400" data-tdate="2026-07-03" data-limitup="0" data-amount="2560797991.0">
-            <td class="code">688400.SH</td>
-            <td class="name">凌云光</td>
-            <td class="name">专用机械</td>
-            <td class="concept">共封装光学(CPO)+苹果概念</td>
+        <tr class="odd" data-code="688235" data-tdate="2026-07-03" data-limitup="0" data-amount="2263912379.0">
+            <td class="code">688235.SH</td>
+            <td class="name">百济神州</td>
+            <td class="name">生物制药</td>
+            <td class="concept">创新药+人民币贬值受益</td>
             <td class="date">2026-07-03</td>
-            <td class="pct up">+9.02%</td>
-            <td class="amount">25.61亿</td>
-            <td class="price up">71.41</td>
-            <td class="price">68.46</td>
-            <td class="amount">342.22亿</td>
-            <td class="amount">329.18亿</td>
-            <td class="amount">169.38亿</td>
-        </tr>
-        <tr class="even" data-code="301005" data-tdate="2026-07-03" data-limitup="0" data-amount="2475392860.59">
-            <td class="code">301005.SZ</td>
-            <td class="name">超捷股份</td>
-            <td class="name">汽车配件</td>
-            <td class="concept">卫星导航+航空发动机</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+11.73%</td>
-            <td class="amount">24.75亿</td>
-            <td class="price up">118.64</td>
-            <td class="price">112.41</td>
-            <td class="amount">223.00亿</td>
-            <td class="amount">218.46亿</td>
-            <td class="amount">118.36亿</td>
-        </tr>
-        <tr class="odd" data-code="002422" data-tdate="2026-07-03" data-limitup="0" data-amount="2417181516.07">
-            <td class="code">002422.SZ</td>
-            <td class="name">科伦药业</td>
-            <td class="name">化学制药</td>
-            <td class="concept">毛发医疗+创新药</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+7.22%</td>
-            <td class="amount">24.17亿</td>
-            <td class="price up">47.98</td>
-            <td class="price">46.36</td>
-            <td class="amount">763.26亿</td>
-            <td class="amount">623.07亿</td>
-            <td class="amount">518.40亿</td>
+            <td class="pct up">+5.28%</td>
+            <td class="amount">22.64亿</td>
+            <td class="price up">277.00</td>
+            <td class="price">260.27</td>
+            <td class="amount">3991.78亿</td>
+            <td class="amount">318.70亿</td>
+            <td class="amount">318.70亿</td>
         </tr>
         <tr class="even" data-code="301232" data-tdate="2026-07-03" data-limitup="0" data-amount="2213327213.91">
             <td class="code">301232.SZ</td>
@@ -696,39 +1243,11 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+11.69%</td>
             <td class="amount">22.13亿</td>
-            <td class="price up">182.00</td>
+            <td class="price up">175.79</td>
             <td class="price">172.48</td>
-            <td class="amount">191.34亿</td>
-            <td class="amount">113.64亿</td>
-            <td class="amount">105.80亿</td>
-        </tr>
-        <tr class="odd" data-code="688387" data-tdate="2026-07-03" data-limitup="0" data-amount="2210914373.0">
-            <td class="code">688387.SH</td>
-            <td class="name">信科移动</td>
-            <td class="name">通信设备</td>
-            <td class="concept">6G概念+卫星导航</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+10.85%</td>
-            <td class="amount">22.11亿</td>
-            <td class="price up">21.15</td>
-            <td class="price">20.11</td>
-            <td class="amount">723.07亿</td>
-            <td class="amount">426.55亿</td>
-            <td class="amount">246.85亿</td>
-        </tr>
-        <tr class="even" data-code="300558" data-tdate="2026-07-03" data-limitup="0" data-amount="1981023808.35">
-            <td class="code">300558.SZ</td>
-            <td class="name">贝达药业</td>
-            <td class="name">化学制药</td>
-            <td class="concept">重组蛋白+创新药</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+8.48%</td>
-            <td class="amount">19.81亿</td>
-            <td class="price up">72.90</td>
-            <td class="price">70.05</td>
-            <td class="amount">306.72亿</td>
-            <td class="amount">305.74亿</td>
-            <td class="amount">179.54亿</td>
+            <td class="amount">184.81亿</td>
+            <td class="amount">109.76亿</td>
+            <td class="amount">102.19亿</td>
         </tr>
         <tr class="odd" data-code="002850" data-tdate="2026-07-03" data-limitup="1" data-amount="1953519084.06">
             <td class="code">002850.SZ</td>
@@ -738,11 +1257,11 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+10.00%</td>
             <td class="amount">19.54亿</td>
-            <td class="price up">226.16</td>
+            <td class="price up">223.91</td>
             <td class="price">215.88</td>
-            <td class="amount">647.52亿</td>
-            <td class="amount">474.12亿</td>
-            <td class="amount">416.36亿</td>
+            <td class="amount">641.08亿</td>
+            <td class="amount">469.40亿</td>
+            <td class="amount">412.22亿</td>
         </tr>
         <tr class="even" data-code="300487" data-tdate="2026-07-03" data-limitup="0" data-amount="1698340012.4">
             <td class="code">300487.SZ</td>
@@ -752,39 +1271,11 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+10.49%</td>
             <td class="amount">16.98亿</td>
-            <td class="price up">74.58</td>
+            <td class="price up">72.20</td>
             <td class="price">71.04</td>
-            <td class="amount">379.71亿</td>
-            <td class="amount">229.72亿</td>
-            <td class="amount">187.67亿</td>
-        </tr>
-        <tr class="odd" data-code="603638" data-tdate="2026-07-03" data-limitup="0" data-amount="1596263009.0">
-            <td class="code">603638.SH</td>
-            <td class="name">艾迪精密</td>
-            <td class="name">专用机械</td>
-            <td class="concept">减速器+工业母机</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+7.85%</td>
-            <td class="amount">15.96亿</td>
-            <td class="price up">27.90</td>
-            <td class="price">26.88</td>
-            <td class="amount">243.11亿</td>
-            <td class="amount">243.11亿</td>
-            <td class="amount">88.20亿</td>
-        </tr>
-        <tr class="even" data-code="301379" data-tdate="2026-07-03" data-limitup="1" data-amount="1559512057.4">
-            <td class="code">301379.SZ</td>
-            <td class="name">天山电子</td>
-            <td class="name">元器件</td>
-            <td class="concept">存储芯片+MiniLED</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+20.00%</td>
-            <td class="amount">15.60亿</td>
-            <td class="price up">32.16</td>
-            <td class="price">29.48</td>
-            <td class="amount">88.92亿</td>
-            <td class="amount">70.01亿</td>
-            <td class="amount">61.78亿</td>
+            <td class="amount">367.60亿</td>
+            <td class="amount">222.39亿</td>
+            <td class="amount">181.68亿</td>
         </tr>
         <tr class="odd" data-code="300900" data-tdate="2026-07-03" data-limitup="0" data-amount="1518787911.84">
             <td class="code">300900.SZ</td>
@@ -794,53 +1285,25 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+8.62%</td>
             <td class="amount">15.19亿</td>
-            <td class="price up">41.47</td>
+            <td class="price up">40.43</td>
             <td class="price">39.82</td>
-            <td class="amount">135.91亿</td>
-            <td class="amount">106.49亿</td>
-            <td class="amount">102.11亿</td>
+            <td class="amount">132.50亿</td>
+            <td class="amount">103.82亿</td>
+            <td class="amount">99.55亿</td>
         </tr>
-        <tr class="even" data-code="300151" data-tdate="2026-07-03" data-limitup="0" data-amount="1323806790.79">
-            <td class="code">300151.SZ</td>
-            <td class="name">昌红科技</td>
-            <td class="name">专用机械</td>
-            <td class="concept">芯片概念+机器人概念</td>
+        <tr class="even" data-code="688180" data-tdate="2026-07-03" data-limitup="0" data-amount="1147945053.0">
+            <td class="code">688180.SH</td>
+            <td class="name">君实生物</td>
+            <td class="name">生物制药</td>
+            <td class="concept">创新药+生物疫苗</td>
             <td class="date">2026-07-03</td>
-            <td class="pct up">+7.18%</td>
-            <td class="amount">13.24亿</td>
-            <td class="price up">26.72</td>
-            <td class="price">25.83</td>
-            <td class="amount">142.29亿</td>
-            <td class="amount">98.52亿</td>
-            <td class="amount">84.98亿</td>
-        </tr>
-        <tr class="odd" data-code="688661" data-tdate="2026-07-03" data-limitup="0" data-amount="1204450864.0">
-            <td class="code">688661.SH</td>
-            <td class="name">和林微纳</td>
-            <td class="name">元器件</td>
-            <td class="concept">芯片概念+消费电子概念</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+11.41%</td>
-            <td class="amount">12.04亿</td>
-            <td class="price up">174.37</td>
-            <td class="price">165.44</td>
-            <td class="amount">264.85亿</td>
-            <td class="amount">264.85亿</td>
-            <td class="amount">137.29亿</td>
-        </tr>
-        <tr class="even" data-code="002635" data-tdate="2026-07-03" data-limitup="1" data-amount="1108819545.31">
-            <td class="code">002635.SZ</td>
-            <td class="name">安洁科技</td>
-            <td class="name">元器件</td>
-            <td class="concept">柔性屏(折叠屏)+苹果概念</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+9.98%</td>
-            <td class="amount">11.09亿</td>
-            <td class="price up">23.36</td>
-            <td class="price">22.30</td>
-            <td class="amount">154.10亿</td>
-            <td class="amount">92.40亿</td>
-            <td class="amount">71.90亿</td>
+            <td class="pct up">+5.41%</td>
+            <td class="amount">11.48亿</td>
+            <td class="price up">38.10</td>
+            <td class="price">37.02</td>
+            <td class="amount">391.17亿</td>
+            <td class="amount">292.00亿</td>
+            <td class="amount">189.41亿</td>
         </tr>
         <tr class="odd" data-code="300163" data-tdate="2026-07-03" data-limitup="0" data-amount="916768098.0">
             <td class="code">300163.SZ</td>
@@ -850,39 +1313,11 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+15.92%</td>
             <td class="amount">9.17亿</td>
-            <td class="price up">7.50</td>
+            <td class="price up">7.98</td>
             <td class="price">6.98</td>
-            <td class="amount">35.55亿</td>
-            <td class="amount">34.24亿</td>
-            <td class="amount">32.22亿</td>
-        </tr>
-        <tr class="even" data-code="688165" data-tdate="2026-07-03" data-limitup="0" data-amount="880235523.0">
-            <td class="code">688165.SH</td>
-            <td class="name">埃夫特</td>
-            <td class="name">专用机械</td>
-            <td class="concept">减速器+人形机器人</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+9.87%</td>
-            <td class="amount">8.80亿</td>
-            <td class="price up">23.26</td>
-            <td class="price">22.22</td>
-            <td class="amount">121.37亿</td>
-            <td class="amount">121.37亿</td>
-            <td class="amount">63.86亿</td>
-        </tr>
-        <tr class="odd" data-code="920510" data-tdate="2026-07-03" data-limitup="1" data-amount="875181940.08">
-            <td class="code">920510.SZ</td>
-            <td class="name">丰光精密</td>
-            <td class="name">机械基件</td>
-            <td class="concept">机器人概念+减速器</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+30.00%</td>
-            <td class="amount">8.75亿</td>
-            <td class="price up">32.76</td>
-            <td class="price">28.98</td>
-            <td class="amount">60.28亿</td>
-            <td class="amount">30.76亿</td>
-            <td class="amount">21.01亿</td>
+            <td class="amount">37.83亿</td>
+            <td class="amount">36.44亿</td>
+            <td class="amount">34.28亿</td>
         </tr>
         <tr class="even" data-code="301051" data-tdate="2026-07-03" data-limitup="0" data-amount="791015694.81">
             <td class="code">301051.SZ</td>
@@ -892,11 +1327,11 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+17.07%</td>
             <td class="amount">7.91亿</td>
-            <td class="price up">22.77</td>
+            <td class="price up">23.48</td>
             <td class="price">21.11</td>
-            <td class="amount">64.73亿</td>
-            <td class="amount">51.42亿</td>
-            <td class="amount">39.00亿</td>
+            <td class="amount">66.74亿</td>
+            <td class="amount">53.03亿</td>
+            <td class="amount">40.21亿</td>
         </tr>
         <tr class="odd" data-code="001270" data-tdate="2026-07-03" data-limitup="1" data-amount="744642167.72">
             <td class="code">001270.SZ</td>
@@ -906,55 +1341,13 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+10.00%</td>
             <td class="amount">7.45亿</td>
-            <td class="price up">163.32</td>
+            <td class="price up">159.39</td>
             <td class="price">155.90</td>
-            <td class="amount">336.63亿</td>
-            <td class="amount">334.48亿</td>
-            <td class="amount">177.53亿</td>
+            <td class="amount">328.53亿</td>
+            <td class="amount">326.44亿</td>
+            <td class="amount">173.26亿</td>
         </tr>
-        <tr class="even" data-code="603725" data-tdate="2026-07-03" data-limitup="0" data-amount="637714444.0">
-            <td class="code">603725.SH</td>
-            <td class="name">天安新材</td>
-            <td class="name">塑料</td>
-            <td class="concept">装配式建筑+长安汽车概念</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+9.54%</td>
-            <td class="amount">6.38亿</td>
-            <td class="price up">13.90</td>
-            <td class="price">13.29</td>
-            <td class="amount">42.38亿</td>
-            <td class="amount">42.38亿</td>
-            <td class="amount">24.02亿</td>
-        </tr>
-        <tr class="odd" data-code="002860" data-tdate="2026-07-03" data-limitup="0" data-amount="612101797.37">
-            <td class="code">002860.SZ</td>
-            <td class="name">星帅尔</td>
-            <td class="name">家用电器</td>
-            <td class="concept">HJT电池+TOPCON电池</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+7.84%</td>
-            <td class="amount">6.12亿</td>
-            <td class="price up">15.96</td>
-            <td class="price">15.38</td>
-            <td class="amount">56.20亿</td>
-            <td class="amount">54.90亿</td>
-            <td class="amount">34.24亿</td>
-        </tr>
-        <tr class="even" data-code="301588" data-tdate="2026-07-03" data-limitup="0" data-amount="517490762.45">
-            <td class="code">301588.SZ</td>
-            <td class="name">美新科技</td>
-            <td class="name">家居用品</td>
-            <td class="concept">粤港澳大湾区+人民币贬值受益</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+10.27%</td>
-            <td class="amount">5.17亿</td>
-            <td class="price up">53.90</td>
-            <td class="price">51.39</td>
-            <td class="amount">64.07亿</td>
-            <td class="amount">39.54亿</td>
-            <td class="amount">31.81亿</td>
-        </tr>
-        <tr class="odd" data-code="002520" data-tdate="2026-07-03" data-limitup="1" data-amount="510923897.54">
+        <tr class="even" data-code="002520" data-tdate="2026-07-03" data-limitup="1" data-amount="510923897.54">
             <td class="code">002520.SZ</td>
             <td class="name">日发精机</td>
             <td class="name">机床制造</td>
@@ -962,13 +1355,13 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+9.97%</td>
             <td class="amount">5.11亿</td>
-            <td class="price up">7.72</td>
+            <td class="price up">7.68</td>
             <td class="price">7.37</td>
-            <td class="amount">57.92亿</td>
-            <td class="amount">55.39亿</td>
-            <td class="amount">41.61亿</td>
+            <td class="amount">57.62亿</td>
+            <td class="amount">55.10亿</td>
+            <td class="amount">41.40亿</td>
         </tr>
-        <tr class="even" data-code="301596" data-tdate="2026-07-03" data-limitup="1" data-amount="488549455.61">
+        <tr class="odd" data-code="301596" data-tdate="2026-07-03" data-limitup="1" data-amount="488549455.61">
             <td class="code">301596.SZ</td>
             <td class="name">瑞迪智驱</td>
             <td class="name">机械基件</td>
@@ -976,11 +1369,25 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+20.00%</td>
             <td class="amount">4.89亿</td>
-            <td class="price up">63.97</td>
+            <td class="price up">60.60</td>
             <td class="price">58.64</td>
-            <td class="amount">69.11亿</td>
-            <td class="amount">28.05亿</td>
-            <td class="amount">23.60亿</td>
+            <td class="amount">65.47亿</td>
+            <td class="amount">26.57亿</td>
+            <td class="amount">22.35亿</td>
+        </tr>
+        <tr class="even" data-code="603223" data-tdate="2026-07-03" data-limitup="0" data-amount="484157044.0">
+            <td class="code">603223.SH</td>
+            <td class="name">恒通股份</td>
+            <td class="name">公路</td>
+            <td class="concept">天然气+航运概念</td>
+            <td class="date">2026-07-03</td>
+            <td class="pct up">+5.13%</td>
+            <td class="amount">4.84亿</td>
+            <td class="price up">14.40</td>
+            <td class="price">13.80</td>
+            <td class="amount">101.64亿</td>
+            <td class="amount">101.64亿</td>
+            <td class="amount">41.08亿</td>
         </tr>
         <tr class="odd" data-code="605305" data-tdate="2026-07-03" data-limitup="1" data-amount="453705579.0">
             <td class="code">605305.SH</td>
@@ -990,27 +1397,13 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+10.00%</td>
             <td class="amount">4.54亿</td>
-            <td class="price up">45.98</td>
+            <td class="price up">47.39</td>
             <td class="price">43.89</td>
-            <td class="amount">97.72亿</td>
-            <td class="amount">97.72亿</td>
-            <td class="amount">70.31亿</td>
+            <td class="amount">100.71亿</td>
+            <td class="amount">100.71亿</td>
+            <td class="amount">72.47亿</td>
         </tr>
-        <tr class="even" data-code="603726" data-tdate="2026-07-03" data-limitup="1" data-amount="430102598.0">
-            <td class="code">603726.SH</td>
-            <td class="name">朗迪集团</td>
-            <td class="name">家用电器</td>
-            <td class="concept">先进封装+家用电器</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+9.99%</td>
-            <td class="amount">4.30亿</td>
-            <td class="price up">35.45</td>
-            <td class="price">33.84</td>
-            <td class="amount">65.81亿</td>
-            <td class="amount">65.48亿</td>
-            <td class="amount">29.37亿</td>
-        </tr>
-        <tr class="odd" data-code="002979" data-tdate="2026-07-03" data-limitup="1" data-amount="383958077.75">
+        <tr class="even" data-code="002979" data-tdate="2026-07-03" data-limitup="1" data-amount="383958077.75">
             <td class="code">002979.SZ</td>
             <td class="name">雷赛智能</td>
             <td class="name">专用机械</td>
@@ -1018,27 +1411,27 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+10.00%</td>
             <td class="amount">3.84亿</td>
-            <td class="price up">69.55</td>
+            <td class="price up">73.27</td>
             <td class="price">66.39</td>
-            <td class="amount">219.78亿</td>
-            <td class="amount">154.92亿</td>
-            <td class="amount">118.80亿</td>
+            <td class="amount">231.53亿</td>
+            <td class="amount">163.20亿</td>
+            <td class="amount">125.16亿</td>
         </tr>
-        <tr class="even" data-code="002072" data-tdate="2026-07-03" data-limitup="1" data-amount="370503923.08">
-            <td class="code">002072.SZ</td>
-            <td class="name">凯瑞德</td>
-            <td class="name">商贸代理</td>
-            <td class="concept">煤炭概念</td>
+        <tr class="odd" data-code="301067" data-tdate="2026-07-03" data-limitup="0" data-amount="383079342.92">
+            <td class="code">301067.SZ</td>
+            <td class="name">显盈科技</td>
+            <td class="name">元器件</td>
+            <td class="concept">铜缆高速连接+无线充电</td>
             <td class="date">2026-07-03</td>
-            <td class="pct up">+10.05%</td>
-            <td class="amount">3.71亿</td>
-            <td class="price up">9.64</td>
-            <td class="price">9.20</td>
-            <td class="amount">35.44亿</td>
-            <td class="amount">35.43亿</td>
-            <td class="amount">18.49亿</td>
+            <td class="pct up">+6.93%</td>
+            <td class="amount">3.83亿</td>
+            <td class="price up">36.95</td>
+            <td class="price">36.74</td>
+            <td class="amount">35.93亿</td>
+            <td class="amount">23.58亿</td>
+            <td class="amount">16.83亿</td>
         </tr>
-        <tr class="odd" data-code="300985" data-tdate="2026-07-03" data-limitup="1" data-amount="369561812.26">
+        <tr class="even" data-code="300985" data-tdate="2026-07-03" data-limitup="1" data-amount="369561812.26">
             <td class="code">300985.SZ</td>
             <td class="name">致远新能</td>
             <td class="name">汽车配件</td>
@@ -1046,27 +1439,27 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+20.00%</td>
             <td class="amount">3.70亿</td>
-            <td class="price up">49.67</td>
+            <td class="price up">49.35</td>
             <td class="price">45.53</td>
-            <td class="amount">92.64亿</td>
-            <td class="amount">92.64亿</td>
-            <td class="amount">27.01亿</td>
+            <td class="amount">92.04亿</td>
+            <td class="amount">92.04亿</td>
+            <td class="amount">26.83亿</td>
         </tr>
-        <tr class="even" data-code="603713" data-tdate="2026-07-03" data-limitup="1" data-amount="282332892.0">
-            <td class="code">603713.SH</td>
-            <td class="name">密尔克卫</td>
-            <td class="name">仓储物流</td>
-            <td class="concept">上海自贸区+自由贸易港</td>
+        <tr class="odd" data-code="301210" data-tdate="2026-07-03" data-limitup="0" data-amount="319263137.85">
+            <td class="code">301210.SZ</td>
+            <td class="name">金杨精密</td>
+            <td class="name">电气设备</td>
+            <td class="concept">减速器+人形机器人</td>
             <td class="date">2026-07-03</td>
-            <td class="pct up">+10.00%</td>
-            <td class="amount">2.82亿</td>
-            <td class="price up">79.23</td>
-            <td class="price">75.63</td>
-            <td class="amount">125.29亿</td>
-            <td class="amount">125.29亿</td>
-            <td class="amount">66.36亿</td>
+            <td class="pct up">+6.76%</td>
+            <td class="amount">3.19亿</td>
+            <td class="price up">31.92</td>
+            <td class="price">31.64</td>
+            <td class="amount">51.44亿</td>
+            <td class="amount">19.65亿</td>
+            <td class="amount">19.35亿</td>
         </tr>
-        <tr class="odd" data-code="603580" data-tdate="2026-07-03" data-limitup="1" data-amount="204230153.0">
+        <tr class="even" data-code="603580" data-tdate="2026-07-03" data-limitup="1" data-amount="204230153.0">
             <td class="code">603580.SH</td>
             <td class="name">艾艾精工</td>
             <td class="name">塑料</td>
@@ -1074,67 +1467,25 @@ td.amount {
             <td class="date">2026-07-03</td>
             <td class="pct up">+10.00%</td>
             <td class="amount">2.04亿</td>
-            <td class="price up">30.13</td>
+            <td class="price up">30.68</td>
             <td class="price">28.76</td>
-            <td class="amount">39.37亿</td>
-            <td class="amount">39.37亿</td>
-            <td class="amount">13.02亿</td>
+            <td class="amount">40.09亿</td>
+            <td class="amount">40.09亿</td>
+            <td class="amount">13.26亿</td>
         </tr>
-        <tr class="even" data-code="603137" data-tdate="2026-07-03" data-limitup="1" data-amount="10426366.0">
-            <td class="code">603137.SH</td>
-            <td class="name">恒尚节能</td>
-            <td class="name">装修装饰</td>
-            <td class="concept">装配式建筑+建筑节能</td>
-            <td class="date">2026-07-03</td>
-            <td class="pct up">+10.03%</td>
-            <td class="amount">1042.64万</td>
-            <td class="price up">17.22</td>
-            <td class="price">16.44</td>
-            <td class="amount">31.50亿</td>
-            <td class="amount">31.50亿</td>
-            <td class="amount">14.34亿</td>
-        </tr>
-        <tr class="odd" data-code="600641" data-tdate="2026-07-02" data-limitup="1" data-amount="3282307867.0">
-            <td class="code">600641.SH</td>
-            <td class="name">先导基电</td>
-            <td class="name">半导体</td>
-            <td class="concept">第三代半导体+存储芯片</td>
-            <td class="date">2026-07-02</td>
-            <td class="pct up">+10.01%</td>
-            <td class="amount">32.82亿</td>
-            <td class="price up">47.51</td>
-            <td class="price">46.05</td>
-            <td class="amount">449.86亿</td>
-            <td class="amount">442.14亿</td>
-            <td class="amount">334.83亿</td>
-        </tr>
-        <tr class="even" data-code="688305" data-tdate="2026-07-02" data-limitup="0" data-amount="1164180484.0">
-            <td class="code">688305.SH</td>
-            <td class="name">科德数控</td>
-            <td class="name">机床制造</td>
-            <td class="concept">工业母机+新型工业化</td>
-            <td class="date">2026-07-02</td>
-            <td class="pct up">+12.37%</td>
-            <td class="amount">11.64亿</td>
-            <td class="price up">73.96</td>
-            <td class="price">71.40</td>
-            <td class="amount">98.30亿</td>
-            <td class="amount">97.79亿</td>
-            <td class="amount">54.26亿</td>
-        </tr>
-        <tr class="odd" data-code="002458" data-tdate="2026-07-02" data-limitup="1" data-amount="976273988.27">
-            <td class="code">002458.SZ</td>
-            <td class="name">益生股份</td>
+        <tr class="odd" data-code="688098" data-tdate="2026-07-03" data-limitup="0" data-amount="160667272.0">
+            <td class="code">688098.SH</td>
+            <td class="name">申联生物</td>
             <td class="name">农业综合</td>
-            <td class="concept">养鸡+猪肉</td>
-            <td class="date">2026-07-02</td>
-            <td class="pct up">+10.06%</td>
-            <td class="amount">9.76亿</td>
-            <td class="price up">9.06</td>
-            <td class="price">8.98</td>
-            <td class="amount">129.67亿</td>
-            <td class="amount">87.55亿</td>
-            <td class="amount">75.53亿</td>
+            <td class="concept">动物疫苗+合成生物</td>
+            <td class="date">2026-07-03</td>
+            <td class="pct up">+13.30%</td>
+            <td class="amount">1.61亿</td>
+            <td class="price up">9.50</td>
+            <td class="price">9.30</td>
+            <td class="amount">39.01亿</td>
+            <td class="amount">39.01亿</td>
+            <td class="amount">22.10亿</td>
         </tr>
         <tr class="even" data-code="300980" data-tdate="2026-07-02" data-limitup="0" data-amount="556134292.88">
             <td class="code">300980.SZ</td>
@@ -1144,53 +1495,25 @@ td.amount {
             <td class="date">2026-07-02</td>
             <td class="pct up">+6.89%</td>
             <td class="amount">5.56亿</td>
-            <td class="price up">33.35</td>
+            <td class="price up">34.11</td>
             <td class="price">32.23</td>
-            <td class="amount">46.04亿</td>
-            <td class="amount">32.80亿</td>
-            <td class="amount">27.28亿</td>
+            <td class="amount">47.09亿</td>
+            <td class="amount">33.54亿</td>
+            <td class="amount">27.90亿</td>
         </tr>
-        <tr class="odd" data-code="300932" data-tdate="2026-07-02" data-limitup="0" data-amount="526442225.67">
-            <td class="code">300932.SZ</td>
-            <td class="name">三友联众</td>
-            <td class="name">电气设备</td>
-            <td class="concept">智能电网+充电桩</td>
+        <tr class="odd" data-code="603638" data-tdate="2026-07-02" data-limitup="1" data-amount="493523206.0">
+            <td class="code">603638.SH</td>
+            <td class="name">艾迪精密</td>
+            <td class="name">专用机械</td>
+            <td class="concept">减速器+工业母机</td>
             <td class="date">2026-07-02</td>
-            <td class="pct up">+7.42%</td>
-            <td class="amount">5.26亿</td>
-            <td class="price up">11.97</td>
-            <td class="price">11.04</td>
-            <td class="amount">53.64亿</td>
-            <td class="amount">38.21亿</td>
-            <td class="amount">24.00亿</td>
-        </tr>
-        <tr class="even" data-code="002955" data-tdate="2026-07-02" data-limitup="0" data-amount="519294691.39">
-            <td class="code">002955.SZ</td>
-            <td class="name">鸿合科技</td>
-            <td class="name">IT设备</td>
-            <td class="concept">托育服务+在线教育</td>
-            <td class="date">2026-07-02</td>
-            <td class="pct up">+5.21%</td>
-            <td class="amount">5.19亿</td>
-            <td class="price up">37.15</td>
-            <td class="price">36.61</td>
-            <td class="amount">87.91亿</td>
-            <td class="amount">72.68亿</td>
-            <td class="amount">40.88亿</td>
-        </tr>
-        <tr class="odd" data-code="600322" data-tdate="2026-07-02" data-limitup="0" data-amount="298539123.0">
-            <td class="code">600322.SH</td>
-            <td class="name">津投城开</td>
-            <td class="name">区域地产</td>
-            <td class="concept">物业管理+天津自贸区</td>
-            <td class="date">2026-07-02</td>
-            <td class="pct up">+8.04%</td>
-            <td class="amount">2.99亿</td>
-            <td class="price up">3.07</td>
-            <td class="price">2.98</td>
-            <td class="amount">33.94亿</td>
-            <td class="amount">33.94亿</td>
-            <td class="amount">25.83亿</td>
+            <td class="pct up">+9.99%</td>
+            <td class="amount">4.94亿</td>
+            <td class="price up">25.11</td>
+            <td class="price">24.70</td>
+            <td class="amount">218.80亿</td>
+            <td class="amount">218.80亿</td>
+            <td class="amount">79.38亿</td>
         </tr>
         <tr class="even" data-code="300550" data-tdate="2026-07-02" data-limitup="0" data-amount="256536973.43">
             <td class="code">300550.SZ</td>
@@ -1200,13 +1523,27 @@ td.amount {
             <td class="date">2026-07-02</td>
             <td class="pct up">+12.82%</td>
             <td class="amount">2.57亿</td>
-            <td class="price up">15.82</td>
+            <td class="price up">15.23</td>
             <td class="price">14.69</td>
-            <td class="amount">41.54亿</td>
-            <td class="amount">41.50亿</td>
-            <td class="amount">20.82亿</td>
+            <td class="amount">39.99亿</td>
+            <td class="amount">39.95亿</td>
+            <td class="amount">20.04亿</td>
         </tr>
-        <tr class="odd" data-code="601211" data-tdate="2026-07-01" data-limitup="0" data-amount="4914597776.0">
+        <tr class="odd" data-code="600641" data-tdate="2026-07-01" data-limitup="1" data-amount="5470812363.0">
+            <td class="code">600641.SH</td>
+            <td class="name">先导基电</td>
+            <td class="name">半导体</td>
+            <td class="concept">第三代半导体+存储芯片</td>
+            <td class="date">2026-07-01</td>
+            <td class="pct up">+10.01%</td>
+            <td class="amount">54.71亿</td>
+            <td class="price up">43.44</td>
+            <td class="price">41.86</td>
+            <td class="amount">411.32亿</td>
+            <td class="amount">404.27亿</td>
+            <td class="amount">306.15亿</td>
+        </tr>
+        <tr class="even" data-code="601211" data-tdate="2026-07-01" data-limitup="0" data-amount="4914597776.0">
             <td class="code">601211.SH</td>
             <td class="name">国泰海通</td>
             <td class="name">证券</td>
@@ -1214,13 +1551,13 @@ td.amount {
             <td class="date">2026-07-01</td>
             <td class="pct up">+5.05%</td>
             <td class="amount">49.15亿</td>
-            <td class="price up">19.37</td>
+            <td class="price up">19.80</td>
             <td class="price">18.66</td>
-            <td class="amount">3414.72亿</td>
-            <td class="amount">2614.35亿</td>
-            <td class="amount">2113.99亿</td>
+            <td class="amount">3490.53亿</td>
+            <td class="amount">2672.39亿</td>
+            <td class="amount">2160.92亿</td>
         </tr>
-        <tr class="even" data-code="002167" data-tdate="2026-07-01" data-limitup="1" data-amount="3966088328.2">
+        <tr class="odd" data-code="002167" data-tdate="2026-07-01" data-limitup="1" data-amount="3966088328.2">
             <td class="code">002167.SZ</td>
             <td class="name">东方锆业</td>
             <td class="name">小金属</td>
@@ -1228,13 +1565,13 @@ td.amount {
             <td class="date">2026-07-01</td>
             <td class="pct up">+10.01%</td>
             <td class="amount">39.66亿</td>
-            <td class="price up">25.04</td>
+            <td class="price up">23.94</td>
             <td class="price">23.18</td>
-            <td class="amount">193.98亿</td>
-            <td class="amount">189.98亿</td>
-            <td class="amount">141.50亿</td>
+            <td class="amount">185.46亿</td>
+            <td class="amount">181.64亿</td>
+            <td class="amount">135.29亿</td>
         </tr>
-        <tr class="odd" data-code="600366" data-tdate="2026-07-01" data-limitup="0" data-amount="2863249709.0">
+        <tr class="even" data-code="600366" data-tdate="2026-07-01" data-limitup="0" data-amount="2863249709.0">
             <td class="code">600366.SH</td>
             <td class="name">宁波韵升</td>
             <td class="name">矿物制品</td>
@@ -1242,25 +1579,11 @@ td.amount {
             <td class="date">2026-07-01</td>
             <td class="pct up">+8.92%</td>
             <td class="amount">28.63亿</td>
-            <td class="price up">16.83</td>
+            <td class="price up">16.11</td>
             <td class="price">15.34</td>
-            <td class="amount">184.97亿</td>
-            <td class="amount">184.97亿</td>
-            <td class="amount">124.08亿</td>
-        </tr>
-        <tr class="even" data-code="300720" data-tdate="2026-07-01" data-limitup="0" data-amount="2474097627.19">
-            <td class="code">300720.SZ</td>
-            <td class="name">海川智能</td>
-            <td class="name">电器仪表</td>
-            <td class="concept">物联网+机器人概念</td>
-            <td class="date">2026-07-01</td>
-            <td class="pct up">+14.66%</td>
-            <td class="amount">24.74亿</td>
-            <td class="price up">108.11</td>
-            <td class="price">103.25</td>
-            <td class="amount">210.68亿</td>
-            <td class="amount">185.40亿</td>
-            <td class="amount">95.44亿</td>
+            <td class="amount">177.06亿</td>
+            <td class="amount">177.06亿</td>
+            <td class="amount">118.77亿</td>
         </tr>
         <tr class="odd" data-code="688331" data-tdate="2026-07-01" data-limitup="0" data-amount="2466616873.0">
             <td class="code">688331.SH</td>
@@ -1270,11 +1593,11 @@ td.amount {
             <td class="date">2026-07-01</td>
             <td class="pct up">+6.71%</td>
             <td class="amount">24.67亿</td>
-            <td class="price up">148.40</td>
+            <td class="price up">143.01</td>
             <td class="price">134.63</td>
-            <td class="amount">837.68亿</td>
-            <td class="amount">528.15亿</td>
-            <td class="amount">317.12亿</td>
+            <td class="amount">807.26亿</td>
+            <td class="amount">508.97亿</td>
+            <td class="amount">305.61亿</td>
         </tr>
         <tr class="even" data-code="688578" data-tdate="2026-07-01" data-limitup="0" data-amount="2259879704.0">
             <td class="code">688578.SH</td>
@@ -1284,13 +1607,27 @@ td.amount {
             <td class="date">2026-07-01</td>
             <td class="pct up">+15.21%</td>
             <td class="amount">22.60亿</td>
-            <td class="price up">130.88</td>
+            <td class="price up">130.58</td>
             <td class="price">117.51</td>
-            <td class="amount">588.96亿</td>
-            <td class="amount">588.96亿</td>
-            <td class="amount">322.33亿</td>
+            <td class="amount">587.61亿</td>
+            <td class="amount">587.61亿</td>
+            <td class="amount">321.59亿</td>
         </tr>
-        <tr class="odd" data-code="300873" data-tdate="2026-07-01" data-limitup="1" data-amount="1523997139.54">
+        <tr class="odd" data-code="002422" data-tdate="2026-07-01" data-limitup="0" data-amount="2014403913.13">
+            <td class="code">002422.SZ</td>
+            <td class="name">科伦药业</td>
+            <td class="name">化学制药</td>
+            <td class="concept">毛发医疗+创新药</td>
+            <td class="date">2026-07-01</td>
+            <td class="pct up">+8.90%</td>
+            <td class="amount">20.14亿</td>
+            <td class="price up">47.73</td>
+            <td class="price">40.24</td>
+            <td class="amount">759.28亿</td>
+            <td class="amount">619.83亿</td>
+            <td class="amount">515.70亿</td>
+        </tr>
+        <tr class="even" data-code="300873" data-tdate="2026-07-01" data-limitup="1" data-amount="1523997139.54">
             <td class="code">300873.SZ</td>
             <td class="name">海晨股份</td>
             <td class="name">仓储物流</td>
@@ -1304,7 +1641,7 @@ td.amount {
             <td class="amount">72.52亿</td>
             <td class="amount">45.72亿</td>
         </tr>
-        <tr class="even" data-code="688266" data-tdate="2026-07-01" data-limitup="0" data-amount="1523836406.0">
+        <tr class="odd" data-code="688266" data-tdate="2026-07-01" data-limitup="0" data-amount="1523836406.0">
             <td class="code">688266.SH</td>
             <td class="name">泽璟制药</td>
             <td class="name">生物制药</td>
@@ -1312,25 +1649,11 @@ td.amount {
             <td class="date">2026-07-01</td>
             <td class="pct up">+11.43%</td>
             <td class="amount">15.24亿</td>
-            <td class="price up">143.00</td>
+            <td class="price up">143.05</td>
             <td class="price">123.33</td>
-            <td class="amount">378.53亿</td>
-            <td class="amount">378.53亿</td>
-            <td class="amount">251.85亿</td>
-        </tr>
-        <tr class="odd" data-code="002326" data-tdate="2026-07-01" data-limitup="1" data-amount="1493090002.97">
-            <td class="code">002326.SZ</td>
-            <td class="name">永太科技</td>
-            <td class="name">化工原料</td>
-            <td class="concept">氟化工概念+钠离子电池</td>
-            <td class="date">2026-07-01</td>
-            <td class="pct up">+10.02%</td>
-            <td class="amount">14.93亿</td>
-            <td class="price up">25.81</td>
-            <td class="price">24.84</td>
-            <td class="amount">238.78亿</td>
-            <td class="amount">208.59亿</td>
-            <td class="amount">166.03亿</td>
+            <td class="amount">378.67亿</td>
+            <td class="amount">378.67亿</td>
+            <td class="amount">251.94亿</td>
         </tr>
         <tr class="even" data-code="688506" data-tdate="2026-07-01" data-limitup="0" data-amount="1304775205.0">
             <td class="code">688506.SH</td>
@@ -1340,27 +1663,13 @@ td.amount {
             <td class="date">2026-07-01</td>
             <td class="pct up">+8.80%</td>
             <td class="amount">13.05亿</td>
-            <td class="price up">340.00</td>
+            <td class="price up">330.00</td>
             <td class="price">306.96</td>
-            <td class="amount">1403.77亿</td>
-            <td class="amount">1403.77亿</td>
-            <td class="amount">307.07亿</td>
+            <td class="amount">1362.48亿</td>
+            <td class="amount">1362.48亿</td>
+            <td class="amount">298.04亿</td>
         </tr>
-        <tr class="odd" data-code="300244" data-tdate="2026-07-01" data-limitup="0" data-amount="1212698521.05">
-            <td class="code">300244.SZ</td>
-            <td class="name">迪安诊断</td>
-            <td class="name">医疗保健</td>
-            <td class="concept">DRG/DIP+AI应用</td>
-            <td class="date">2026-07-01</td>
-            <td class="pct up">+9.39%</td>
-            <td class="amount">12.13亿</td>
-            <td class="price up">20.22</td>
-            <td class="price">19.62</td>
-            <td class="amount">126.37亿</td>
-            <td class="amount">101.40亿</td>
-            <td class="amount">90.93亿</td>
-        </tr>
-        <tr class="even" data-code="688221" data-tdate="2026-07-01" data-limitup="0" data-amount="1018942886.0">
+        <tr class="odd" data-code="688221" data-tdate="2026-07-01" data-limitup="0" data-amount="1018942886.0">
             <td class="code">688221.SH</td>
             <td class="name">前沿生物</td>
             <td class="name">生物制药</td>
@@ -1368,13 +1677,13 @@ td.amount {
             <td class="date">2026-07-01</td>
             <td class="pct up">+18.71%</td>
             <td class="amount">10.19亿</td>
-            <td class="price up">27.73</td>
+            <td class="price up">27.62</td>
             <td class="price">24.49</td>
-            <td class="amount">103.87亿</td>
-            <td class="amount">103.87亿</td>
-            <td class="amount">61.21亿</td>
+            <td class="amount">103.46亿</td>
+            <td class="amount">103.46亿</td>
+            <td class="amount">60.96亿</td>
         </tr>
-        <tr class="odd" data-code="001331" data-tdate="2026-07-01" data-limitup="1" data-amount="861061299.15">
+        <tr class="even" data-code="001331" data-tdate="2026-07-01" data-limitup="1" data-amount="861061299.15">
             <td class="code">001331.SZ</td>
             <td class="name">胜通能源</td>
             <td class="name">供气供热</td>
@@ -1382,25 +1691,11 @@ td.amount {
             <td class="date">2026-07-01</td>
             <td class="pct up">+10.00%</td>
             <td class="amount">8.61亿</td>
-            <td class="price up">63.49</td>
+            <td class="price up">66.17</td>
             <td class="price">59.20</td>
-            <td class="amount">259.83亿</td>
-            <td class="amount">181.48亿</td>
-            <td class="amount">50.40亿</td>
-        </tr>
-        <tr class="even" data-code="688207" data-tdate="2026-07-01" data-limitup="0" data-amount="835613669.0">
-            <td class="code">688207.SH</td>
-            <td class="name">格灵深瞳</td>
-            <td class="name">软件服务</td>
-            <td class="concept">MLOps概念+空间计算</td>
-            <td class="date">2026-07-01</td>
-            <td class="pct up">+12.39%</td>
-            <td class="amount">8.36亿</td>
-            <td class="price up">22.84</td>
-            <td class="price">21.34</td>
-            <td class="amount">59.15亿</td>
-            <td class="amount">59.15亿</td>
-            <td class="amount">43.09亿</td>
+            <td class="amount">270.80亿</td>
+            <td class="amount">189.14亿</td>
+            <td class="amount">52.53亿</td>
         </tr>
         <tr class="odd" data-code="301363" data-tdate="2026-07-01" data-limitup="0" data-amount="766809346.49">
             <td class="code">301363.SZ</td>
@@ -1410,11 +1705,11 @@ td.amount {
             <td class="date">2026-07-01</td>
             <td class="pct up">+13.91%</td>
             <td class="amount">7.67亿</td>
-            <td class="price up">20.96</td>
+            <td class="price up">21.66</td>
             <td class="price">19.61</td>
-            <td class="amount">166.83亿</td>
-            <td class="amount">109.42亿</td>
-            <td class="amount">49.88亿</td>
+            <td class="amount">172.41亿</td>
+            <td class="amount">113.07亿</td>
+            <td class="amount">51.54亿</td>
         </tr>
         <tr class="even" data-code="002468" data-tdate="2026-07-01" data-limitup="1" data-amount="715797030.87">
             <td class="code">002468.SZ</td>
@@ -1424,11 +1719,11 @@ td.amount {
             <td class="date">2026-07-01</td>
             <td class="pct up">+10.03%</td>
             <td class="amount">7.16亿</td>
-            <td class="price up">16.31</td>
+            <td class="price up">17.08</td>
             <td class="price">15.29</td>
-            <td class="amount">249.67亿</td>
-            <td class="amount">238.80亿</td>
-            <td class="amount">93.22亿</td>
+            <td class="amount">261.46亿</td>
+            <td class="amount">250.07亿</td>
+            <td class="amount">97.62亿</td>
         </tr>
         <tr class="odd" data-code="605178" data-tdate="2026-07-01" data-limitup="1" data-amount="702378025.0">
             <td class="code">605178.SH</td>
@@ -1438,25 +1733,25 @@ td.amount {
             <td class="date">2026-07-01</td>
             <td class="pct up">+10.00%</td>
             <td class="amount">7.02亿</td>
-            <td class="price up">120.06</td>
+            <td class="price up">111.49</td>
             <td class="price">99.56</td>
-            <td class="amount">118.96亿</td>
-            <td class="amount">118.96亿</td>
-            <td class="amount">74.33亿</td>
+            <td class="amount">110.46亿</td>
+            <td class="amount">110.46亿</td>
+            <td class="amount">69.03亿</td>
         </tr>
-        <tr class="even" data-code="002921" data-tdate="2026-07-01" data-limitup="0" data-amount="493911708.79">
-            <td class="code">002921.SZ</td>
-            <td class="name">联诚精密</td>
-            <td class="name">汽车配件</td>
-            <td class="concept">农机+减速器</td>
+        <tr class="even" data-code="002458" data-tdate="2026-07-01" data-limitup="1" data-amount="697744765.27">
+            <td class="code">002458.SZ</td>
+            <td class="name">益生股份</td>
+            <td class="name">农业综合</td>
+            <td class="concept">养鸡+猪肉</td>
             <td class="date">2026-07-01</td>
-            <td class="pct up">+8.71%</td>
-            <td class="amount">4.94亿</td>
-            <td class="price up">29.95</td>
-            <td class="price">28.53</td>
-            <td class="amount">44.62亿</td>
-            <td class="amount">38.47亿</td>
-            <td class="amount">31.27亿</td>
+            <td class="pct up">+10.04%</td>
+            <td class="amount">6.98亿</td>
+            <td class="price up">9.45</td>
+            <td class="price">8.16</td>
+            <td class="amount">135.25亿</td>
+            <td class="amount">91.32亿</td>
+            <td class="amount">78.78亿</td>
         </tr>
         <tr class="odd" data-code="688117" data-tdate="2026-07-01" data-limitup="0" data-amount="382429046.0">
             <td class="code">688117.SH</td>
@@ -1466,11 +1761,11 @@ td.amount {
             <td class="date">2026-07-01</td>
             <td class="pct up">+6.84%</td>
             <td class="amount">3.82亿</td>
-            <td class="price up">30.08</td>
+            <td class="price up">30.70</td>
             <td class="price">27.96</td>
-            <td class="amount">66.28亿</td>
-            <td class="amount">66.28亿</td>
-            <td class="amount">46.14亿</td>
+            <td class="amount">67.64亿</td>
+            <td class="amount">67.64亿</td>
+            <td class="amount">47.09亿</td>
         </tr>
         <tr class="even" data-code="603040" data-tdate="2026-07-01" data-limitup="1" data-amount="367371063.0">
             <td class="code">603040.SH</td>
@@ -1480,53 +1775,25 @@ td.amount {
             <td class="date">2026-07-01</td>
             <td class="pct up">+10.00%</td>
             <td class="amount">3.67亿</td>
-            <td class="price up">71.71</td>
+            <td class="price up">68.83</td>
             <td class="price">66.23</td>
-            <td class="amount">141.52亿</td>
-            <td class="amount">140.78亿</td>
-            <td class="amount">64.76亿</td>
+            <td class="amount">135.84亿</td>
+            <td class="amount">135.13亿</td>
+            <td class="amount">62.16亿</td>
         </tr>
-        <tr class="odd" data-code="688168" data-tdate="2026-07-01" data-limitup="0" data-amount="359774989.0">
-            <td class="code">688168.SH</td>
-            <td class="name">安博通</td>
-            <td class="name">软件服务</td>
-            <td class="concept">网络安全+国产操作系统</td>
+        <tr class="odd" data-code="301588" data-tdate="2026-07-01" data-limitup="0" data-amount="344424755.16">
+            <td class="code">301588.SZ</td>
+            <td class="name">美新科技</td>
+            <td class="name">家居用品</td>
+            <td class="concept">粤港澳大湾区+人民币贬值受益</td>
             <td class="date">2026-07-01</td>
-            <td class="pct up">+5.35%</td>
-            <td class="amount">3.60亿</td>
-            <td class="price up">73.80</td>
-            <td class="price">70.59</td>
-            <td class="amount">79.75亿</td>
-            <td class="amount">79.75亿</td>
-            <td class="amount">52.17亿</td>
-        </tr>
-        <tr class="even" data-code="301281" data-tdate="2026-07-01" data-limitup="0" data-amount="341307120.97">
-            <td class="code">301281.SZ</td>
-            <td class="name">科源制药</td>
-            <td class="name">化学制药</td>
-            <td class="concept">数字经济+维生素</td>
-            <td class="date">2026-07-01</td>
-            <td class="pct up">+14.18%</td>
-            <td class="amount">3.41亿</td>
-            <td class="price up">56.37</td>
-            <td class="price">52.79</td>
-            <td class="amount">61.04亿</td>
-            <td class="amount">40.00亿</td>
-            <td class="amount">38.82亿</td>
-        </tr>
-        <tr class="odd" data-code="920699" data-tdate="2026-07-01" data-limitup="1" data-amount="309655322.87">
-            <td class="code">920699.SZ</td>
-            <td class="name">海达尔</td>
-            <td class="name">家用电器</td>
-            <td class="concept">比亚迪概念+东数西算(算力)</td>
-            <td class="date">2026-07-01</td>
-            <td class="pct up">+29.99%</td>
-            <td class="amount">3.10亿</td>
-            <td class="price up">109.01</td>
-            <td class="price">82.21</td>
-            <td class="amount">49.74亿</td>
-            <td class="amount">22.76亿</td>
-            <td class="amount">13.76亿</td>
+            <td class="pct up">+5.64%</td>
+            <td class="amount">3.44亿</td>
+            <td class="price up">52.80</td>
+            <td class="price">45.00</td>
+            <td class="amount">62.76亿</td>
+            <td class="amount">38.73亿</td>
+            <td class="amount">31.16亿</td>
         </tr>
         <tr class="even" data-code="688571" data-tdate="2026-07-01" data-limitup="1" data-amount="300493712.0">
             <td class="code">688571.SH</td>
@@ -1536,11 +1803,11 @@ td.amount {
             <td class="date">2026-07-01</td>
             <td class="pct up">+20.00%</td>
             <td class="amount">3.00亿</td>
-            <td class="price up">10.24</td>
+            <td class="price up">10.06</td>
             <td class="price">9.62</td>
-            <td class="amount">43.44亿</td>
-            <td class="amount">43.44亿</td>
-            <td class="amount">17.32亿</td>
+            <td class="amount">42.67亿</td>
+            <td class="amount">42.67亿</td>
+            <td class="amount">17.01亿</td>
         </tr>
         <tr class="odd" data-code="300562" data-tdate="2026-07-01" data-limitup="0" data-amount="297249895.57">
             <td class="code">300562.SZ</td>
@@ -1550,27 +1817,13 @@ td.amount {
             <td class="date">2026-07-01</td>
             <td class="pct up">+6.59%</td>
             <td class="amount">2.97亿</td>
-            <td class="price up">15.09</td>
+            <td class="price up">14.57</td>
             <td class="price">13.95</td>
-            <td class="amount">32.99亿</td>
-            <td class="amount">24.59亿</td>
-            <td class="amount">21.99亿</td>
+            <td class="amount">31.85亿</td>
+            <td class="amount">23.74亿</td>
+            <td class="amount">21.24亿</td>
         </tr>
-        <tr class="even" data-code="002559" data-tdate="2026-07-01" data-limitup="1" data-amount="289025316.0">
-            <td class="code">002559.SZ</td>
-            <td class="name">亚威股份</td>
-            <td class="name">机床制造</td>
-            <td class="concept">OLED+芯片概念</td>
-            <td class="date">2026-07-01</td>
-            <td class="pct up">+9.99%</td>
-            <td class="amount">2.89亿</td>
-            <td class="price up">14.24</td>
-            <td class="price">13.35</td>
-            <td class="amount">78.29亿</td>
-            <td class="amount">71.77亿</td>
-            <td class="amount">65.87亿</td>
-        </tr>
-        <tr class="odd" data-code="002293" data-tdate="2026-07-01" data-limitup="0" data-amount="158523638.88">
+        <tr class="even" data-code="002293" data-tdate="2026-07-01" data-limitup="0" data-amount="158523638.88">
             <td class="code">002293.SZ</td>
             <td class="name">罗莱生活</td>
             <td class="name">纺织</td>
@@ -1578,69 +1831,13 @@ td.amount {
             <td class="date">2026-07-01</td>
             <td class="pct up">+7.79%</td>
             <td class="amount">1.59亿</td>
-            <td class="price up">11.07</td>
+            <td class="price up">11.24</td>
             <td class="price">10.27</td>
-            <td class="amount">92.68亿</td>
-            <td class="amount">91.91亿</td>
-            <td class="amount">48.44亿</td>
+            <td class="amount">94.10亿</td>
+            <td class="amount">93.32亿</td>
+            <td class="amount">49.18亿</td>
         </tr>
-        <tr class="even" data-code="002407" data-tdate="2026-06-30" data-limitup="1" data-amount="9392668642.28">
-            <td class="code">002407.SZ</td>
-            <td class="name">多氟多</td>
-            <td class="name">化工原料</td>
-            <td class="concept">氟化工概念+PVDF概念</td>
-            <td class="date">2026-06-30</td>
-            <td class="pct up">+10.01%</td>
-            <td class="amount">93.93亿</td>
-            <td class="price up">49.34</td>
-            <td class="price">47.94</td>
-            <td class="amount">587.36亿</td>
-            <td class="amount">532.26亿</td>
-            <td class="amount">498.98亿</td>
-        </tr>
-        <tr class="odd" data-code="600378" data-tdate="2026-06-30" data-limitup="1" data-amount="7446881534.0">
-            <td class="code">600378.SH</td>
-            <td class="name">昊华科技</td>
-            <td class="name">化工原料</td>
-            <td class="concept">氟化工概念+PVDF概念</td>
-            <td class="date">2026-06-30</td>
-            <td class="pct up">+10.00%</td>
-            <td class="amount">74.47亿</td>
-            <td class="price up">76.01</td>
-            <td class="price">71.95</td>
-            <td class="amount">980.53亿</td>
-            <td class="amount">815.26亿</td>
-            <td class="amount">366.65亿</td>
-        </tr>
-        <tr class="even" data-code="300671" data-tdate="2026-06-30" data-limitup="1" data-amount="3304636254.53">
-            <td class="code">300671.SZ</td>
-            <td class="name">富满微</td>
-            <td class="name">半导体</td>
-            <td class="concept">汽车芯片+存储芯片</td>
-            <td class="date">2026-06-30</td>
-            <td class="pct up">+20.00%</td>
-            <td class="amount">33.05亿</td>
-            <td class="price up">94.35</td>
-            <td class="price">78.98</td>
-            <td class="amount">208.88亿</td>
-            <td class="amount">208.27亿</td>
-            <td class="amount">143.25亿</td>
-        </tr>
-        <tr class="odd" data-code="603379" data-tdate="2026-06-30" data-limitup="1" data-amount="2350911461.0">
-            <td class="code">603379.SH</td>
-            <td class="name">三美股份</td>
-            <td class="name">化工原料</td>
-            <td class="concept">PVDF概念+氟化工概念</td>
-            <td class="date">2026-06-30</td>
-            <td class="pct up">+10.00%</td>
-            <td class="amount">23.51亿</td>
-            <td class="price up">75.13</td>
-            <td class="price">72.44</td>
-            <td class="amount">458.65亿</td>
-            <td class="amount">458.65亿</td>
-            <td class="amount">188.09亿</td>
-        </tr>
-        <tr class="even" data-code="300083" data-tdate="2026-06-30" data-limitup="0" data-amount="2195908554.01">
+        <tr class="odd" data-code="300083" data-tdate="2026-06-30" data-limitup="0" data-amount="2195908554.01">
             <td class="code">300083.SZ</td>
             <td class="name">创世纪</td>
             <td class="name">机床制造</td>
@@ -1648,13 +1845,13 @@ td.amount {
             <td class="date">2026-06-30</td>
             <td class="pct up">+12.01%</td>
             <td class="amount">21.96亿</td>
-            <td class="price up">13.66</td>
+            <td class="price up">14.39</td>
             <td class="price">12.89</td>
-            <td class="amount">227.42亿</td>
-            <td class="amount">203.82亿</td>
-            <td class="amount">192.76亿</td>
+            <td class="amount">239.57亿</td>
+            <td class="amount">214.72亿</td>
+            <td class="amount">203.06亿</td>
         </tr>
-        <tr class="odd" data-code="603078" data-tdate="2026-06-30" data-limitup="1" data-amount="2112264717.0">
+        <tr class="even" data-code="603078" data-tdate="2026-06-30" data-limitup="1" data-amount="2112264717.0">
             <td class="code">603078.SH</td>
             <td class="name">江化微</td>
             <td class="name">半导体</td>
@@ -1662,13 +1859,13 @@ td.amount {
             <td class="date">2026-06-30</td>
             <td class="pct up">+9.99%</td>
             <td class="amount">21.12亿</td>
-            <td class="price up">56.26</td>
+            <td class="price up">57.70</td>
             <td class="price">47.18</td>
-            <td class="amount">216.96亿</td>
-            <td class="amount">216.96亿</td>
-            <td class="amount">131.78亿</td>
+            <td class="amount">222.51亿</td>
+            <td class="amount">222.51亿</td>
+            <td class="amount">135.15亿</td>
         </tr>
-        <tr class="even" data-code="688728" data-tdate="2026-06-30" data-limitup="1" data-amount="1765970409.0">
+        <tr class="odd" data-code="688728" data-tdate="2026-06-30" data-limitup="1" data-amount="1765970409.0">
             <td class="code">688728.SH</td>
             <td class="name">格科微</td>
             <td class="name">半导体</td>
@@ -1676,13 +1873,13 @@ td.amount {
             <td class="date">2026-06-30</td>
             <td class="pct up">+20.02%</td>
             <td class="amount">17.66亿</td>
-            <td class="price up">23.17</td>
+            <td class="price up">21.50</td>
             <td class="price">19.29</td>
-            <td class="amount">602.56亿</td>
-            <td class="amount">578.99亿</td>
-            <td class="amount">195.40亿</td>
+            <td class="amount">559.13亿</td>
+            <td class="amount">537.26亿</td>
+            <td class="amount">181.31亿</td>
         </tr>
-        <tr class="odd" data-code="301307" data-tdate="2026-06-30" data-limitup="0" data-amount="1705049611.94">
+        <tr class="even" data-code="301307" data-tdate="2026-06-30" data-limitup="0" data-amount="1705049611.94">
             <td class="code">301307.SZ</td>
             <td class="name">美利信</td>
             <td class="name">通信设备</td>
@@ -1690,11 +1887,25 @@ td.amount {
             <td class="date">2026-06-30</td>
             <td class="pct up">+8.36%</td>
             <td class="amount">17.05亿</td>
-            <td class="price up">81.19</td>
+            <td class="price up">86.66</td>
             <td class="price">72.39</td>
-            <td class="amount">170.99亿</td>
-            <td class="amount">88.32亿</td>
-            <td class="amount">86.33亿</td>
+            <td class="amount">182.51亿</td>
+            <td class="amount">94.27亿</td>
+            <td class="amount">92.14亿</td>
+        </tr>
+        <tr class="odd" data-code="300607" data-tdate="2026-06-30" data-limitup="0" data-amount="1600454298.91">
+            <td class="code">300607.SZ</td>
+            <td class="name">拓斯达</td>
+            <td class="name">专用机械</td>
+            <td class="concept">人形机器人+工业母机</td>
+            <td class="date">2026-06-30</td>
+            <td class="pct up">+7.82%</td>
+            <td class="amount">16.00亿</td>
+            <td class="price up">45.01</td>
+            <td class="price">39.73</td>
+            <td class="amount">214.69亿</td>
+            <td class="amount">151.91亿</td>
+            <td class="amount">135.63亿</td>
         </tr>
         <tr class="even" data-code="300566" data-tdate="2026-06-30" data-limitup="0" data-amount="1584931140.67">
             <td class="code">300566.SZ</td>
@@ -1704,11 +1915,11 @@ td.amount {
             <td class="date">2026-06-30</td>
             <td class="pct up">+12.45%</td>
             <td class="amount">15.85亿</td>
-            <td class="price up">37.08</td>
+            <td class="price up">37.86</td>
             <td class="price">34.90</td>
-            <td class="amount">97.19亿</td>
-            <td class="amount">84.05亿</td>
-            <td class="amount">75.89亿</td>
+            <td class="amount">99.23亿</td>
+            <td class="amount">85.82亿</td>
+            <td class="amount">77.49亿</td>
         </tr>
         <tr class="odd" data-code="000970" data-tdate="2026-06-30" data-limitup="1" data-amount="1451344375.75">
             <td class="code">000970.SZ</td>
@@ -1718,11 +1929,11 @@ td.amount {
             <td class="date">2026-06-30</td>
             <td class="pct up">+9.99%</td>
             <td class="amount">14.51亿</td>
-            <td class="price up">16.48</td>
+            <td class="price up">15.57</td>
             <td class="price">14.50</td>
-            <td class="amount">200.35亿</td>
-            <td class="amount">200.35亿</td>
-            <td class="amount">151.15亿</td>
+            <td class="amount">189.29亿</td>
+            <td class="amount">189.29亿</td>
+            <td class="amount">142.80亿</td>
         </tr>
         <tr class="even" data-code="300540" data-tdate="2026-06-30" data-limitup="1" data-amount="1271793375.61">
             <td class="code">300540.SZ</td>
@@ -1732,41 +1943,27 @@ td.amount {
             <td class="date">2026-06-30</td>
             <td class="pct up">+20.01%</td>
             <td class="amount">12.72亿</td>
-            <td class="price up">41.21</td>
+            <td class="price up">39.92</td>
             <td class="price">34.74</td>
-            <td class="amount">93.79亿</td>
-            <td class="amount">85.19亿</td>
-            <td class="amount">55.68亿</td>
+            <td class="amount">90.85亿</td>
+            <td class="amount">82.53亿</td>
+            <td class="amount">53.94亿</td>
         </tr>
-        <tr class="odd" data-code="300843" data-tdate="2026-06-30" data-limitup="0" data-amount="1238784151.05">
-            <td class="code">300843.SZ</td>
-            <td class="name">胜蓝股份</td>
-            <td class="name">元器件</td>
-            <td class="concept">铜缆高速连接+富士康概念</td>
+        <tr class="odd" data-code="603662" data-tdate="2026-06-30" data-limitup="1" data-amount="1096026697.0">
+            <td class="code">603662.SH</td>
+            <td class="name">柯力传感</td>
+            <td class="name">电器仪表</td>
+            <td class="concept">人形机器人+机器视觉</td>
             <td class="date">2026-06-30</td>
-            <td class="pct up">+11.04%</td>
-            <td class="amount">12.39亿</td>
-            <td class="price up">151.46</td>
-            <td class="price">148.48</td>
-            <td class="amount">247.95亿</td>
-            <td class="amount">243.09亿</td>
-            <td class="amount">111.76亿</td>
+            <td class="pct up">+10.00%</td>
+            <td class="amount">10.96亿</td>
+            <td class="price up">73.20</td>
+            <td class="price">67.94</td>
+            <td class="amount">205.57亿</td>
+            <td class="amount">205.57亿</td>
+            <td class="amount">96.48亿</td>
         </tr>
-        <tr class="even" data-code="300852" data-tdate="2026-06-30" data-limitup="0" data-amount="1168060348.53">
-            <td class="code">300852.SZ</td>
-            <td class="name">四会富仕</td>
-            <td class="name">元器件</td>
-            <td class="concept">PCB概念+共封装光学(CPO)</td>
-            <td class="date">2026-06-30</td>
-            <td class="pct up">+11.62%</td>
-            <td class="amount">11.68亿</td>
-            <td class="price up">68.26</td>
-            <td class="price">65.64</td>
-            <td class="amount">109.57亿</td>
-            <td class="amount">105.77亿</td>
-            <td class="amount">49.07亿</td>
-        </tr>
-        <tr class="odd" data-code="603991" data-tdate="2026-06-30" data-limitup="1" data-amount="1075425025.0">
+        <tr class="even" data-code="603991" data-tdate="2026-06-30" data-limitup="1" data-amount="1075425025.0">
             <td class="code">603991.SH</td>
             <td class="name">领先股份</td>
             <td class="name">半导体</td>
@@ -1774,25 +1971,11 @@ td.amount {
             <td class="date">2026-06-30</td>
             <td class="pct up">+10.00%</td>
             <td class="amount">10.75亿</td>
-            <td class="price up">151.67</td>
+            <td class="price up">153.59</td>
             <td class="price">134.73</td>
-            <td class="amount">231.61亿</td>
-            <td class="amount">135.80亿</td>
-            <td class="amount">105.28亿</td>
-        </tr>
-        <tr class="even" data-code="688209" data-tdate="2026-06-30" data-limitup="0" data-amount="861501299.0">
-            <td class="code">688209.SH</td>
-            <td class="name">英集芯</td>
-            <td class="name">半导体</td>
-            <td class="concept">汽车芯片+芯片概念</td>
-            <td class="date">2026-06-30</td>
-            <td class="pct up">+16.51%</td>
-            <td class="amount">8.62亿</td>
-            <td class="price up">27.51</td>
-            <td class="price">27.02</td>
-            <td class="amount">119.33亿</td>
-            <td class="amount">119.33亿</td>
-            <td class="amount">54.70亿</td>
+            <td class="amount">234.55亿</td>
+            <td class="amount">137.52亿</td>
+            <td class="amount">106.61亿</td>
         </tr>
         <tr class="odd" data-code="000620" data-tdate="2026-06-30" data-limitup="1" data-amount="831446299.58">
             <td class="code">000620.SZ</td>
@@ -1802,11 +1985,11 @@ td.amount {
             <td class="date">2026-06-30</td>
             <td class="pct up">+10.06%</td>
             <td class="amount">8.31亿</td>
-            <td class="price up">3.60</td>
+            <td class="price up">3.46</td>
             <td class="price">3.34</td>
-            <td class="amount">211.39亿</td>
-            <td class="amount">168.18亿</td>
-            <td class="amount">121.03亿</td>
+            <td class="amount">203.16亿</td>
+            <td class="amount">161.64亿</td>
+            <td class="amount">116.33亿</td>
         </tr>
         <tr class="even" data-code="301045" data-tdate="2026-06-30" data-limitup="1" data-amount="765950319.86">
             <td class="code">301045.SZ</td>
@@ -1816,11 +1999,11 @@ td.amount {
             <td class="date">2026-06-30</td>
             <td class="pct up">+20.01%</td>
             <td class="amount">7.66亿</td>
-            <td class="price up">97.50</td>
+            <td class="price up">92.81</td>
             <td class="price">81.65</td>
-            <td class="amount">107.56亿</td>
-            <td class="amount">67.97亿</td>
-            <td class="amount">41.29亿</td>
+            <td class="amount">102.39亿</td>
+            <td class="amount">64.70亿</td>
+            <td class="amount">39.31亿</td>
         </tr>
         <tr class="odd" data-code="300596" data-tdate="2026-06-30" data-limitup="0" data-amount="691388887.19">
             <td class="code">300596.SZ</td>
@@ -1830,25 +2013,25 @@ td.amount {
             <td class="date">2026-06-30</td>
             <td class="pct up">+10.67%</td>
             <td class="amount">6.91亿</td>
-            <td class="price up">52.90</td>
+            <td class="price up">51.89</td>
             <td class="price">49.95</td>
-            <td class="amount">121.47亿</td>
-            <td class="amount">118.86亿</td>
-            <td class="amount">80.08亿</td>
+            <td class="amount">119.15亿</td>
+            <td class="amount">116.59亿</td>
+            <td class="amount">78.55亿</td>
         </tr>
-        <tr class="even" data-code="688286" data-tdate="2026-06-30" data-limitup="1" data-amount="640001992.0">
-            <td class="code">688286.SH</td>
-            <td class="name">敏芯股份</td>
-            <td class="name">半导体</td>
-            <td class="concept">传感器+智能穿戴</td>
+        <tr class="even" data-code="300932" data-tdate="2026-06-30" data-limitup="0" data-amount="507627560.84">
+            <td class="code">300932.SZ</td>
+            <td class="name">三友联众</td>
+            <td class="name">电气设备</td>
+            <td class="concept">智能电网+充电桩</td>
             <td class="date">2026-06-30</td>
-            <td class="pct up">+20.00%</td>
-            <td class="amount">6.40亿</td>
-            <td class="price up">83.70</td>
-            <td class="price">75.36</td>
-            <td class="amount">65.55亿</td>
-            <td class="amount">65.55亿</td>
-            <td class="amount">52.96亿</td>
+            <td class="pct up">+17.26%</td>
+            <td class="amount">5.08亿</td>
+            <td class="price up">10.46</td>
+            <td class="price">9.82</td>
+            <td class="amount">46.88亿</td>
+            <td class="amount">33.39亿</td>
+            <td class="amount">23.15亿</td>
         </tr>
         <tr class="odd" data-code="688620" data-tdate="2026-06-30" data-limitup="0" data-amount="492979959.0">
             <td class="code">688620.SH</td>
@@ -1858,11 +2041,11 @@ td.amount {
             <td class="date">2026-06-30</td>
             <td class="pct up">+15.38%</td>
             <td class="amount">4.93亿</td>
-            <td class="price up">16.62</td>
+            <td class="price up">17.05</td>
             <td class="price">15.12</td>
-            <td class="amount">65.15亿</td>
-            <td class="amount">65.15亿</td>
-            <td class="amount">44.63亿</td>
+            <td class="amount">66.84亿</td>
+            <td class="amount">66.84亿</td>
+            <td class="amount">45.78亿</td>
         </tr>
         <tr class="even" data-code="603607" data-tdate="2026-06-30" data-limitup="1" data-amount="412719020.0">
             <td class="code">603607.SH</td>
@@ -1872,11 +2055,11 @@ td.amount {
             <td class="date">2026-06-30</td>
             <td class="pct up">+10.02%</td>
             <td class="amount">4.13亿</td>
-            <td class="price up">25.14</td>
+            <td class="price up">25.50</td>
             <td class="price">23.48</td>
-            <td class="amount">44.88亿</td>
-            <td class="amount">44.88亿</td>
-            <td class="amount">23.27亿</td>
+            <td class="amount">45.52亿</td>
+            <td class="amount">45.52亿</td>
+            <td class="amount">23.60亿</td>
         </tr>
         <tr class="odd" data-code="301365" data-tdate="2026-06-30" data-limitup="0" data-amount="315457126.45">
             <td class="code">301365.SZ</td>
@@ -1886,11 +2069,11 @@ td.amount {
             <td class="date">2026-06-30</td>
             <td class="pct up">+15.93%</td>
             <td class="amount">3.15亿</td>
-            <td class="price up">40.02</td>
+            <td class="price up">41.53</td>
             <td class="price">35.31</td>
-            <td class="amount">73.01亿</td>
-            <td class="amount">49.41亿</td>
-            <td class="amount">20.18亿</td>
+            <td class="amount">75.76亿</td>
+            <td class="amount">51.28亿</td>
+            <td class="amount">20.94亿</td>
         </tr>
         <tr class="even" data-code="002687" data-tdate="2026-06-30" data-limitup="0" data-amount="296696047.08">
             <td class="code">002687.SZ</td>
@@ -1900,11 +2083,11 @@ td.amount {
             <td class="date">2026-06-30</td>
             <td class="pct up">+5.43%</td>
             <td class="amount">2.97亿</td>
-            <td class="price up">5.65</td>
+            <td class="price up">5.49</td>
             <td class="price">5.11</td>
-            <td class="amount">28.52亿</td>
-            <td class="amount">23.36亿</td>
-            <td class="amount">16.64亿</td>
+            <td class="amount">27.71亿</td>
+            <td class="amount">22.70亿</td>
+            <td class="amount">16.17亿</td>
         </tr>
         <tr class="odd" data-code="688272" data-tdate="2026-06-30" data-limitup="0" data-amount="266539320.0">
             <td class="code">688272.SH</td>
@@ -1914,55 +2097,13 @@ td.amount {
             <td class="date">2026-06-30</td>
             <td class="pct up">+12.58%</td>
             <td class="amount">2.67亿</td>
-            <td class="price up">46.77</td>
+            <td class="price up">43.40</td>
             <td class="price">41.92</td>
-            <td class="amount">35.55亿</td>
-            <td class="amount">35.55亿</td>
-            <td class="amount">13.17亿</td>
+            <td class="amount">32.98亿</td>
+            <td class="amount">32.98亿</td>
+            <td class="amount">12.23亿</td>
         </tr>
-        <tr class="even" data-code="688629" data-tdate="2026-06-29" data-limitup="0" data-amount="7047709306.0">
-            <td class="code">688629.SH</td>
-            <td class="name">华丰科技</td>
-            <td class="name">元器件</td>
-            <td class="concept">共封装光学(CPO)+铜缆高速连接</td>
-            <td class="date">2026-06-29</td>
-            <td class="pct up">+18.08%</td>
-            <td class="amount">70.48亿</td>
-            <td class="price up">180.00</td>
-            <td class="price">157.91</td>
-            <td class="amount">842.86亿</td>
-            <td class="amount">829.79亿</td>
-            <td class="amount">463.67亿</td>
-        </tr>
-        <tr class="odd" data-code="600707" data-tdate="2026-06-29" data-limitup="0" data-amount="5687866790.0">
-            <td class="code">600707.SH</td>
-            <td class="name">彩虹股份</td>
-            <td class="name">元器件</td>
-            <td class="concept">OLED+人民币贬值受益</td>
-            <td class="date">2026-06-29</td>
-            <td class="pct up">+9.96%</td>
-            <td class="amount">56.88亿</td>
-            <td class="price up">15.02</td>
-            <td class="price">14.65</td>
-            <td class="amount">538.98亿</td>
-            <td class="amount">538.87亿</td>
-            <td class="amount">198.84亿</td>
-        </tr>
-        <tr class="even" data-code="688233" data-tdate="2026-06-29" data-limitup="1" data-amount="4201717120.0">
-            <td class="code">688233.SH</td>
-            <td class="name">神工股份</td>
-            <td class="name">半导体</td>
-            <td class="concept">存储芯片+第三代半导体</td>
-            <td class="date">2026-06-29</td>
-            <td class="pct up">+20.00%</td>
-            <td class="amount">42.02亿</td>
-            <td class="price up">188.29</td>
-            <td class="price">178.14</td>
-            <td class="amount">320.67亿</td>
-            <td class="amount">320.67亿</td>
-            <td class="amount">185.58亿</td>
-        </tr>
-        <tr class="odd" data-code="688362" data-tdate="2026-06-29" data-limitup="0" data-amount="4178041667.0">
+        <tr class="even" data-code="688362" data-tdate="2026-06-29" data-limitup="0" data-amount="4178041667.0">
             <td class="code">688362.SH</td>
             <td class="name">甬矽电子</td>
             <td class="name">半导体</td>
@@ -1970,13 +2111,13 @@ td.amount {
             <td class="date">2026-06-29</td>
             <td class="pct up">+12.49%</td>
             <td class="amount">41.78亿</td>
-            <td class="price up">90.00</td>
+            <td class="price up">95.93</td>
             <td class="price">80.23</td>
-            <td class="amount">407.72亿</td>
-            <td class="amount">407.72亿</td>
-            <td class="amount">277.37亿</td>
+            <td class="amount">434.59亿</td>
+            <td class="amount">434.59亿</td>
+            <td class="amount">295.65亿</td>
         </tr>
-        <tr class="even" data-code="688596" data-tdate="2026-06-29" data-limitup="0" data-amount="4034247528.0">
+        <tr class="odd" data-code="688596" data-tdate="2026-06-29" data-limitup="0" data-amount="4034247528.0">
             <td class="code">688596.SH</td>
             <td class="name">正帆科技</td>
             <td class="name">专用机械</td>
@@ -1984,13 +2125,13 @@ td.amount {
             <td class="date">2026-06-29</td>
             <td class="pct up">+17.31%</td>
             <td class="amount">40.34亿</td>
-            <td class="price up">77.41</td>
+            <td class="price up">71.00</td>
             <td class="price">61.08</td>
-            <td class="amount">227.69亿</td>
-            <td class="amount">227.69亿</td>
-            <td class="amount">188.37亿</td>
+            <td class="amount">208.83亿</td>
+            <td class="amount">208.83亿</td>
+            <td class="amount">172.77亿</td>
         </tr>
-        <tr class="odd" data-code="688432" data-tdate="2026-06-29" data-limitup="1" data-amount="3294047431.0">
+        <tr class="even" data-code="688432" data-tdate="2026-06-29" data-limitup="1" data-amount="3294047431.0">
             <td class="code">688432.SH</td>
             <td class="name">有研硅</td>
             <td class="name">半导体</td>
@@ -1998,55 +2139,27 @@ td.amount {
             <td class="date">2026-06-29</td>
             <td class="pct up">+20.00%</td>
             <td class="amount">32.94亿</td>
-            <td class="price up">42.19</td>
+            <td class="price up">38.45</td>
             <td class="price">33.99</td>
-            <td class="amount">527.50亿</td>
-            <td class="amount">527.50亿</td>
-            <td class="amount">135.24亿</td>
+            <td class="amount">480.74亿</td>
+            <td class="amount">480.74亿</td>
+            <td class="amount">123.25亿</td>
         </tr>
-        <tr class="even" data-code="688548" data-tdate="2026-06-29" data-limitup="1" data-amount="2722803786.0">
-            <td class="code">688548.SH</td>
-            <td class="name">广钢气体</td>
-            <td class="name">化工原料</td>
-            <td class="concept">存储芯片+芯片概念</td>
+        <tr class="odd" data-code="300558" data-tdate="2026-06-29" data-limitup="0" data-amount="2031137255.17">
+            <td class="code">300558.SZ</td>
+            <td class="name">贝达药业</td>
+            <td class="name">化学制药</td>
+            <td class="concept">重组蛋白+创新药</td>
             <td class="date">2026-06-29</td>
-            <td class="pct up">+20.01%</td>
-            <td class="amount">27.23亿</td>
-            <td class="price up">46.45</td>
-            <td class="price">42.61</td>
-            <td class="amount">612.86亿</td>
-            <td class="amount">321.07亿</td>
-            <td class="amount">321.07亿</td>
+            <td class="pct up">+11.33%</td>
+            <td class="amount">20.31亿</td>
+            <td class="price up">68.68</td>
+            <td class="price">61.16</td>
+            <td class="amount">288.96亿</td>
+            <td class="amount">288.04亿</td>
+            <td class="amount">169.15亿</td>
         </tr>
-        <tr class="odd" data-code="688106" data-tdate="2026-06-29" data-limitup="0" data-amount="2658750023.0">
-            <td class="code">688106.SH</td>
-            <td class="name">金宏气体</td>
-            <td class="name">化工原料</td>
-            <td class="concept">中芯国际概念+俄乌冲突概念</td>
-            <td class="date">2026-06-29</td>
-            <td class="pct up">+13.54%</td>
-            <td class="amount">26.59亿</td>
-            <td class="price up">40.00</td>
-            <td class="price">36.83</td>
-            <td class="amount">214.15亿</td>
-            <td class="amount">214.15亿</td>
-            <td class="amount">136.24亿</td>
-        </tr>
-        <tr class="even" data-code="300024" data-tdate="2026-06-29" data-limitup="0" data-amount="2651134423.84">
-            <td class="code">300024.SZ</td>
-            <td class="name">机器人</td>
-            <td class="name">专用机械</td>
-            <td class="concept">人形机器人+新型工业化</td>
-            <td class="date">2026-06-29</td>
-            <td class="pct up">+18.92%</td>
-            <td class="amount">26.51亿</td>
-            <td class="price up">18.31</td>
-            <td class="price">16.66</td>
-            <td class="amount">286.67亿</td>
-            <td class="amount">286.59亿</td>
-            <td class="amount">214.40亿</td>
-        </tr>
-        <tr class="odd" data-code="603061" data-tdate="2026-06-29" data-limitup="1" data-amount="1738056098.0">
+        <tr class="even" data-code="603061" data-tdate="2026-06-29" data-limitup="1" data-amount="1738056098.0">
             <td class="code">603061.SH</td>
             <td class="name">金海通</td>
             <td class="name">半导体</td>
@@ -2054,13 +2167,13 @@ td.amount {
             <td class="date">2026-06-29</td>
             <td class="pct up">+10.00%</td>
             <td class="amount">17.38亿</td>
-            <td class="price up">472.73</td>
+            <td class="price up">462.00</td>
             <td class="price">435.81</td>
-            <td class="amount">411.28亿</td>
-            <td class="amount">411.28亿</td>
-            <td class="amount">229.76亿</td>
+            <td class="amount">401.94亿</td>
+            <td class="amount">401.94亿</td>
+            <td class="amount">224.55亿</td>
         </tr>
-        <tr class="even" data-code="002317" data-tdate="2026-06-29" data-limitup="1" data-amount="1461723660.88">
+        <tr class="odd" data-code="002317" data-tdate="2026-06-29" data-limitup="1" data-amount="1461723660.88">
             <td class="code">002317.SZ</td>
             <td class="name">众生药业</td>
             <td class="name">中成药</td>
@@ -2068,13 +2181,13 @@ td.amount {
             <td class="date">2026-06-29</td>
             <td class="pct up">+10.00%</td>
             <td class="amount">14.62亿</td>
-            <td class="price up">27.44</td>
+            <td class="price up">28.99</td>
             <td class="price">23.72</td>
-            <td class="amount">233.22亿</td>
-            <td class="amount">208.99亿</td>
-            <td class="amount">177.21亿</td>
+            <td class="amount">246.39亿</td>
+            <td class="amount">220.79亿</td>
+            <td class="amount">187.22亿</td>
         </tr>
-        <tr class="odd" data-code="301127" data-tdate="2026-06-29" data-limitup="0" data-amount="1107768355.9">
+        <tr class="even" data-code="301127" data-tdate="2026-06-29" data-limitup="0" data-amount="1107768355.9">
             <td class="code">301127.SZ</td>
             <td class="name">武汉天源</td>
             <td class="name">环境保护</td>
@@ -2082,13 +2195,13 @@ td.amount {
             <td class="date">2026-06-29</td>
             <td class="pct up">+6.87%</td>
             <td class="amount">11.08亿</td>
-            <td class="price up">20.17</td>
+            <td class="price up">20.45</td>
             <td class="price">19.42</td>
-            <td class="amount">135.96亿</td>
-            <td class="amount">132.00亿</td>
-            <td class="amount">71.66亿</td>
+            <td class="amount">137.85亿</td>
+            <td class="amount">133.83亿</td>
+            <td class="amount">72.65亿</td>
         </tr>
-        <tr class="even" data-code="603950" data-tdate="2026-06-29" data-limitup="1" data-amount="1047530944.0">
+        <tr class="odd" data-code="603950" data-tdate="2026-06-29" data-limitup="1" data-amount="1047530944.0">
             <td class="code">603950.SH</td>
             <td class="name">长源东谷</td>
             <td class="name">汽车配件</td>
@@ -2096,13 +2209,13 @@ td.amount {
             <td class="date">2026-06-29</td>
             <td class="pct up">+10.00%</td>
             <td class="amount">10.48亿</td>
-            <td class="price up">83.72</td>
+            <td class="price up">88.46</td>
             <td class="price">73.26</td>
-            <td class="amount">271.36亿</td>
-            <td class="amount">271.14亿</td>
-            <td class="amount">99.77亿</td>
+            <td class="amount">286.73亿</td>
+            <td class="amount">286.49亿</td>
+            <td class="amount">105.42亿</td>
         </tr>
-        <tr class="odd" data-code="688336" data-tdate="2026-06-29" data-limitup="1" data-amount="935576062.0">
+        <tr class="even" data-code="688336" data-tdate="2026-06-29" data-limitup="1" data-amount="935576062.0">
             <td class="code">688336.SH</td>
             <td class="name">三生国健</td>
             <td class="name">生物制药</td>
@@ -2110,13 +2223,13 @@ td.amount {
             <td class="date">2026-06-29</td>
             <td class="pct up">+20.00%</td>
             <td class="amount">9.36亿</td>
-            <td class="price up">60.72</td>
+            <td class="price up">57.52</td>
             <td class="price">45.60</td>
-            <td class="amount">544.19亿</td>
-            <td class="amount">543.04亿</td>
-            <td class="amount">86.84亿</td>
+            <td class="amount">515.51亿</td>
+            <td class="amount">514.42亿</td>
+            <td class="amount">82.27亿</td>
         </tr>
-        <tr class="even" data-code="301328" data-tdate="2026-06-29" data-limitup="0" data-amount="796196292.28">
+        <tr class="odd" data-code="301328" data-tdate="2026-06-29" data-limitup="0" data-amount="796196292.28">
             <td class="code">301328.SZ</td>
             <td class="name">维峰电子</td>
             <td class="name">元器件</td>
@@ -2124,13 +2237,13 @@ td.amount {
             <td class="date">2026-06-29</td>
             <td class="pct up">+18.69%</td>
             <td class="amount">7.96亿</td>
-            <td class="price up">82.31</td>
+            <td class="price up">75.50</td>
             <td class="price">65.23</td>
-            <td class="amount">131.16亿</td>
-            <td class="amount">94.79亿</td>
-            <td class="amount">45.57亿</td>
+            <td class="amount">120.31亿</td>
+            <td class="amount">86.95亿</td>
+            <td class="amount">41.80亿</td>
         </tr>
-        <tr class="odd" data-code="688202" data-tdate="2026-06-29" data-limitup="0" data-amount="770086601.0">
+        <tr class="even" data-code="688202" data-tdate="2026-06-29" data-limitup="0" data-amount="770086601.0">
             <td class="code">688202.SH</td>
             <td class="name">美迪西</td>
             <td class="name">医疗保健</td>
@@ -2138,25 +2251,11 @@ td.amount {
             <td class="date">2026-06-29</td>
             <td class="pct up">+9.61%</td>
             <td class="amount">7.70亿</td>
-            <td class="price up">78.50</td>
+            <td class="price up">77.80</td>
             <td class="price">73.96</td>
-            <td class="amount">105.47亿</td>
-            <td class="amount">105.47亿</td>
-            <td class="amount">59.45亿</td>
-        </tr>
-        <tr class="even" data-code="688686" data-tdate="2026-06-29" data-limitup="0" data-amount="715866864.0">
-            <td class="code">688686.SH</td>
-            <td class="name">奥普特</td>
-            <td class="name">电器仪表</td>
-            <td class="concept">苹果概念+传感器</td>
-            <td class="date">2026-06-29</td>
-            <td class="pct up">+5.64%</td>
-            <td class="amount">7.16亿</td>
-            <td class="price up">169.19</td>
-            <td class="price">158.54</td>
-            <td class="amount">206.81亿</td>
-            <td class="amount">206.81亿</td>
-            <td class="amount">57.57亿</td>
+            <td class="amount">104.53亿</td>
+            <td class="amount">104.53亿</td>
+            <td class="amount">58.92亿</td>
         </tr>
         <tr class="odd" data-code="688428" data-tdate="2026-06-29" data-limitup="0" data-amount="636224824.0">
             <td class="code">688428.SH</td>
@@ -2166,11 +2265,11 @@ td.amount {
             <td class="date">2026-06-29</td>
             <td class="pct up">+13.08%</td>
             <td class="amount">6.36亿</td>
-            <td class="price up">30.18</td>
+            <td class="price up">29.90</td>
             <td class="price">26.96</td>
-            <td class="amount">533.30亿</td>
-            <td class="amount">81.72亿</td>
-            <td class="amount">81.72亿</td>
+            <td class="amount">528.35亿</td>
+            <td class="amount">80.96亿</td>
+            <td class="amount">80.96亿</td>
         </tr>
         <tr class="even" data-code="002653" data-tdate="2026-06-29" data-limitup="1" data-amount="451698492.84">
             <td class="code">002653.SZ</td>
@@ -2180,11 +2279,11 @@ td.amount {
             <td class="date">2026-06-29</td>
             <td class="pct up">+10.00%</td>
             <td class="amount">4.52亿</td>
-            <td class="price up">76.47</td>
+            <td class="price up">69.85</td>
             <td class="price">58.28</td>
-            <td class="amount">856.40亿</td>
-            <td class="amount">410.48亿</td>
-            <td class="amount">205.76亿</td>
+            <td class="amount">782.26亿</td>
+            <td class="amount">374.95亿</td>
+            <td class="amount">187.95亿</td>
         </tr>
         <tr class="odd" data-code="301528" data-tdate="2026-06-29" data-limitup="1" data-amount="423014745.25">
             <td class="code">301528.SZ</td>
@@ -2194,13 +2293,27 @@ td.amount {
             <td class="date">2026-06-29</td>
             <td class="pct up">+20.00%</td>
             <td class="amount">4.23亿</td>
-            <td class="price up">77.83</td>
+            <td class="price up">77.42</td>
             <td class="price">68.20</td>
-            <td class="amount">69.86亿</td>
-            <td class="amount">36.00亿</td>
-            <td class="amount">25.65亿</td>
+            <td class="amount">69.49亿</td>
+            <td class="amount">35.81亿</td>
+            <td class="amount">25.52亿</td>
         </tr>
-        <tr class="even" data-code="003043" data-tdate="2026-06-29" data-limitup="1" data-amount="384337916.95">
+        <tr class="even" data-code="603726" data-tdate="2026-06-29" data-limitup="1" data-amount="420964972.0">
+            <td class="code">603726.SH</td>
+            <td class="name">朗迪集团</td>
+            <td class="name">家用电器</td>
+            <td class="concept">先进封装+家用电器</td>
+            <td class="date">2026-06-29</td>
+            <td class="pct up">+10.00%</td>
+            <td class="amount">4.21亿</td>
+            <td class="price up">33.90</td>
+            <td class="price">30.88</td>
+            <td class="amount">62.94亿</td>
+            <td class="amount">62.62亿</td>
+            <td class="amount">28.08亿</td>
+        </tr>
+        <tr class="odd" data-code="003043" data-tdate="2026-06-29" data-limitup="1" data-amount="384337916.95">
             <td class="code">003043.SZ</td>
             <td class="name">华亚智能</td>
             <td class="name">半导体</td>
@@ -2208,25 +2321,11 @@ td.amount {
             <td class="date">2026-06-29</td>
             <td class="pct up">+10.00%</td>
             <td class="amount">3.84亿</td>
-            <td class="price up">100.07</td>
+            <td class="price up">93.86</td>
             <td class="price">86.24</td>
-            <td class="amount">140.79亿</td>
-            <td class="amount">90.76亿</td>
-            <td class="amount">66.13亿</td>
-        </tr>
-        <tr class="odd" data-code="300689" data-tdate="2026-06-29" data-limitup="0" data-amount="315307557.1">
-            <td class="code">300689.SZ</td>
-            <td class="name">澄天伟业</td>
-            <td class="name">通信设备</td>
-            <td class="concept">芯片概念+专精特新</td>
-            <td class="date">2026-06-29</td>
-            <td class="pct up">+7.04%</td>
-            <td class="amount">3.15亿</td>
-            <td class="price up">66.50</td>
-            <td class="price">64.70</td>
-            <td class="amount">76.87亿</td>
-            <td class="amount">67.29亿</td>
-            <td class="amount">32.51亿</td>
+            <td class="amount">132.05亿</td>
+            <td class="amount">85.13亿</td>
+            <td class="amount">62.03亿</td>
         </tr>
         <tr class="even" data-code="688450" data-tdate="2026-06-29" data-limitup="0" data-amount="297815211.0">
             <td class="code">688450.SH</td>
@@ -2236,11 +2335,11 @@ td.amount {
             <td class="date">2026-06-29</td>
             <td class="pct up">+13.25%</td>
             <td class="amount">2.98亿</td>
-            <td class="price up">63.48</td>
+            <td class="price up">59.94</td>
             <td class="price">58.17</td>
-            <td class="amount">41.90亿</td>
-            <td class="amount">31.06亿</td>
-            <td class="amount">21.29亿</td>
+            <td class="amount">39.56亿</td>
+            <td class="amount">29.33亿</td>
+            <td class="amount">20.11亿</td>
         </tr>
         <tr class="odd" data-code="001229" data-tdate="2026-06-29" data-limitup="1" data-amount="293371966.28">
             <td class="code">001229.SZ</td>
@@ -2250,214 +2349,18 @@ td.amount {
             <td class="date">2026-06-29</td>
             <td class="pct up">+9.99%</td>
             <td class="amount">2.93亿</td>
-            <td class="price up">35.28</td>
+            <td class="price up">35.29</td>
             <td class="price">31.52</td>
-            <td class="amount">50.60亿</td>
-            <td class="amount">26.02亿</td>
-            <td class="amount">14.52亿</td>
-        </tr>
-        <tr class="even" data-code="603928" data-tdate="2026-06-29" data-limitup="1" data-amount="221991799.0">
-            <td class="code">603928.SH</td>
-            <td class="name">兴业股份</td>
-            <td class="name">化工原料</td>
-            <td class="concept">丙烯酸+锂电池概念</td>
-            <td class="date">2026-06-29</td>
-            <td class="pct up">+9.98%</td>
-            <td class="amount">2.22亿</td>
-            <td class="price up">14.70</td>
-            <td class="price">12.84</td>
-            <td class="amount">50.08亿</td>
-            <td class="amount">50.08亿</td>
-            <td class="amount">17.05亿</td>
-        </tr>
-        <tr class="odd" data-code="300260" data-tdate="2026-06-26" data-limitup="0" data-amount="4821904966.55">
-            <td class="code">300260.SZ</td>
-            <td class="name">新莱应材</td>
-            <td class="name">机械基件</td>
-            <td class="concept">光刻机+中芯国际概念</td>
-            <td class="date">2026-06-26</td>
-            <td class="pct up">+14.54%</td>
-            <td class="amount">48.22亿</td>
-            <td class="price up">91.55</td>
-            <td class="price">87.00</td>
-            <td class="amount">373.35亿</td>
-            <td class="amount">263.33亿</td>
-            <td class="amount">164.69亿</td>
-        </tr>
-        <tr class="even" data-code="300762" data-tdate="2026-06-26" data-limitup="0" data-amount="3830024504.9">
-            <td class="code">300762.SZ</td>
-            <td class="name">上海瀚讯</td>
-            <td class="name">通信设备</td>
-            <td class="concept">卫星导航+商业航天</td>
-            <td class="date">2026-06-26</td>
-            <td class="pct up">+11.89%</td>
-            <td class="amount">38.30亿</td>
-            <td class="price up">46.40</td>
-            <td class="price">42.85</td>
-            <td class="amount">291.38亿</td>
-            <td class="amount">291.38亿</td>
-            <td class="amount">239.63亿</td>
-        </tr>
-        <tr class="odd" data-code="603650" data-tdate="2026-06-26" data-limitup="1" data-amount="3051419862.0">
-            <td class="code">603650.SH</td>
-            <td class="name">彤程新材</td>
-            <td class="name">化工原料</td>
-            <td class="concept">光刻胶+中芯国际概念</td>
-            <td class="date">2026-06-26</td>
-            <td class="pct up">+10.00%</td>
-            <td class="amount">30.51亿</td>
-            <td class="price up">89.08</td>
-            <td class="price">81.93</td>
-            <td class="amount">548.81亿</td>
-            <td class="amount">547.37亿</td>
-            <td class="amount">213.56亿</td>
-        </tr>
-        <tr class="even" data-code="301392" data-tdate="2026-06-26" data-limitup="0" data-amount="2519389634.04">
-            <td class="code">301392.SZ</td>
-            <td class="name">汇成真空</td>
-            <td class="name">专用机械</td>
-            <td class="concept">第三代半导体+PET铜箔</td>
-            <td class="date">2026-06-26</td>
-            <td class="pct up">+7.40%</td>
-            <td class="amount">25.19亿</td>
-            <td class="price up">250.13</td>
-            <td class="price">235.40</td>
-            <td class="amount">250.13亿</td>
-            <td class="amount">102.04亿</td>
-            <td class="amount">102.04亿</td>
-        </tr>
-        <tr class="odd" data-code="688028" data-tdate="2026-06-26" data-limitup="0" data-amount="2227471208.0">
-            <td class="code">688028.SH</td>
-            <td class="name">沃尔德</td>
-            <td class="name">机械基件</td>
-            <td class="concept">培育钻石+OLED</td>
-            <td class="date">2026-06-26</td>
-            <td class="pct up">+10.41%</td>
-            <td class="amount">22.27亿</td>
-            <td class="price up">141.50</td>
-            <td class="price">134.83</td>
-            <td class="amount">213.59亿</td>
-            <td class="amount">213.59亿</td>
-            <td class="amount">139.97亿</td>
-        </tr>
-        <tr class="even" data-code="300382" data-tdate="2026-06-26" data-limitup="0" data-amount="1417491879.76">
-            <td class="code">300382.SZ</td>
-            <td class="name">斯莱克</td>
-            <td class="name">专用机械</td>
-            <td class="concept">人形机器人+新能源汽车</td>
-            <td class="date">2026-06-26</td>
-            <td class="pct up">+9.24%</td>
-            <td class="amount">14.17亿</td>
-            <td class="price up">22.50</td>
-            <td class="price">19.93</td>
-            <td class="amount">145.89亿</td>
-            <td class="amount">145.88亿</td>
-            <td class="amount">96.07亿</td>
-        </tr>
-        <tr class="odd" data-code="000551" data-tdate="2026-06-26" data-limitup="0" data-amount="1222219900.03">
-            <td class="code">000551.SZ</td>
-            <td class="name">创元科技</td>
-            <td class="name">专用机械</td>
-            <td class="concept">PM2.5+军工</td>
-            <td class="date">2026-06-26</td>
-            <td class="pct up">+6.23%</td>
-            <td class="amount">12.22亿</td>
-            <td class="price up">20.50</td>
-            <td class="price">17.71</td>
-            <td class="amount">99.37亿</td>
-            <td class="amount">99.33亿</td>
-            <td class="amount">63.98亿</td>
-        </tr>
-        <tr class="even" data-code="300162" data-tdate="2026-06-26" data-limitup="1" data-amount="1216953972.8">
-            <td class="code">300162.SZ</td>
-            <td class="name">雷曼光电</td>
-            <td class="name">元器件</td>
-            <td class="concept">MicroLED概念+足球概念</td>
-            <td class="date">2026-06-26</td>
-            <td class="pct up">+19.98%</td>
-            <td class="amount">12.17亿</td>
-            <td class="price up">12.18</td>
-            <td class="price">11.12</td>
-            <td class="amount">51.10亿</td>
-            <td class="amount">41.68亿</td>
-            <td class="amount">35.63亿</td>
-        </tr>
-        <tr class="odd" data-code="603010" data-tdate="2026-06-26" data-limitup="0" data-amount="876994973.0">
-            <td class="code">603010.SH</td>
-            <td class="name">万盛股份</td>
-            <td class="name">化工原料</td>
-            <td class="concept">PCB概念+芯片概念</td>
-            <td class="date">2026-06-26</td>
-            <td class="pct up">+6.95%</td>
-            <td class="amount">8.77亿</td>
-            <td class="price up">16.88</td>
-            <td class="price">16.07</td>
-            <td class="amount">98.75亿</td>
-            <td class="amount">96.35亿</td>
-            <td class="amount">48.93亿</td>
-        </tr>
-        <tr class="even" data-code="603155" data-tdate="2026-06-26" data-limitup="1" data-amount="509479584.0">
-            <td class="code">603155.SH</td>
-            <td class="name">新亚强</td>
-            <td class="name">化工原料</td>
-            <td class="concept">光刻胶+有机硅概念</td>
-            <td class="date">2026-06-26</td>
-            <td class="pct up">+9.98%</td>
-            <td class="amount">5.09亿</td>
-            <td class="price up">26.88</td>
-            <td class="price">24.19</td>
-            <td class="amount">84.88亿</td>
-            <td class="amount">84.88亿</td>
-            <td class="amount">63.09亿</td>
-        </tr>
-        <tr class="odd" data-code="300592" data-tdate="2026-06-26" data-limitup="0" data-amount="486433165.49">
-            <td class="code">300592.SZ</td>
-            <td class="name">华凯易佰</td>
-            <td class="name">互联网</td>
-            <td class="concept">无人机+华为概念</td>
-            <td class="date">2026-06-26</td>
-            <td class="pct up">+12.94%</td>
-            <td class="amount">4.86亿</td>
-            <td class="price up">18.25</td>
-            <td class="price">15.96</td>
-            <td class="amount">71.40亿</td>
-            <td class="amount">62.76亿</td>
-            <td class="amount">37.49亿</td>
-        </tr>
-        <tr class="even" data-code="688115" data-tdate="2026-06-26" data-limitup="0" data-amount="370708874.0">
-            <td class="code">688115.SH</td>
-            <td class="name">思林杰</td>
-            <td class="name">电器仪表</td>
-            <td class="concept">芯片概念+WiFi 6</td>
-            <td class="date">2026-06-26</td>
-            <td class="pct up">+5.95%</td>
-            <td class="amount">3.71亿</td>
-            <td class="price up">75.80</td>
-            <td class="price">68.34</td>
-            <td class="amount">50.54亿</td>
-            <td class="amount">50.54亿</td>
-            <td class="amount">20.93亿</td>
-        </tr>
-        <tr class="odd" data-code="688156" data-tdate="2026-06-26" data-limitup="0" data-amount="254707059.0">
-            <td class="code">688156.SH</td>
-            <td class="name">路德科技</td>
-            <td class="name">饲料</td>
-            <td class="concept">专精特新+污水处理</td>
-            <td class="date">2026-06-26</td>
-            <td class="pct up">+15.52%</td>
-            <td class="amount">2.55亿</td>
-            <td class="price up">29.91</td>
-            <td class="price">27.98</td>
-            <td class="amount">30.12亿</td>
-            <td class="amount">30.12亿</td>
-            <td class="amount">21.78亿</td>
+            <td class="amount">50.62亿</td>
+            <td class="amount">26.03亿</td>
+            <td class="amount">14.53亿</td>
         </tr>
             </tbody>
         </table>
     </div>
 
     <div class="footer">
-        数据来源：Tushare Pro &nbsp;|&nbsp; 仅供参考，不构成投资建议 &nbsp;|&nbsp; 自动生成于 2026-07-04 12:23
+        数据来源：Tushare Pro &nbsp;|&nbsp; 仅供参考，不构成投资建议 &nbsp;|&nbsp; 自动生成于 2026-07-06 16:40
     </div>
 
     <div class="data-note">
@@ -2477,15 +2380,17 @@ td.amount {
 
 <script>
 var curatedActive = false;
-var CURATED_AMOUNT_THRESHOLD = 1.5e9; // 15 亿
 
 function toggleCurated() {
     curatedActive = !curatedActive;
     var btn = document.getElementById('curatedBtn');
+    var panel = document.getElementById('curatedPanel');
     if (curatedActive) {
         btn.classList.add('active');
+        panel.classList.add('show');
     } else {
         btn.classList.remove('active');
+        panel.classList.remove('show');
     }
     applyFilters();
 }
@@ -2494,13 +2399,22 @@ function applyFilters() {
     var val = document.getElementById('dateFilter').value;
     var rows = document.querySelectorAll('tbody tr[data-code]');
     var visibleCount = 0;
+
+    // 读取精选面板输入值（亿→元）
+    var nonLimitThreshold = parseFloat(document.getElementById('cpNonLimit').value || '0') * 1e8;
+    var limitThreshold = parseFloat(document.getElementById('cpLimit').value || '0') * 1e8;
+
     rows.forEach(function(row) {
         var dateOk = (val === 'all' || row.getAttribute('data-tdate') === val);
         var curatedOk = true;
         if (curatedActive) {
             var isLimit = row.getAttribute('data-limitup') === '1';
             var amt = parseFloat(row.getAttribute('data-amount') || '0');
-            curatedOk = isLimit || amt >= CURATED_AMOUNT_THRESHOLD;
+            if (isLimit) {
+                curatedOk = (limitThreshold <= 0) || (amt >= limitThreshold);
+            } else {
+                curatedOk = (nonLimitThreshold <= 0) || (amt >= nonLimitThreshold);
+            }
         }
         if (dateOk && curatedOk) {
             row.style.display = '';
